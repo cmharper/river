@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<title>Water Levels</title>
+		<!-- Get the CSS -->
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap-theme.min.css" rel="stylesheet">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" rel="stylesheet">
+		<link href="css/flood.css" rel="stylesheet">
+
+	</head>
+  <body>
+		<div class="scroll-top-wrapper" data-toggle="tooltip" data-placement="left" title="Click to go back to the top">
+			<span class="scroll-top-inner">
+				<span class="glyphicon glyphicon-circle-arrow-up" aria-hidden="true"></span>
+			</span>
+		</div>
+		<div class="container" role="main" >
+			<div>
+				<ul class="nav nav-tabs" role="tablist">
+					<li role="presentation" class="active"><a href="#ChitterneBrook" role="tab" data-toggle="tab">Chitterne Brook</a></li>
+					<li role="presentation"><a href="#ChitterneDown" role="tab" data-toggle="tab">Chitterne Down</a></li>
+					<li role="presentation"><a href="#NortonBavant" role="tab" data-toggle="tab">Norton Bavant</a></li>
+					<li role="presentation"><a href="#Orcheston" role="tab" data-toggle="tab">Orcheston</a></li>
+				</ul>
+			</div>
+			<div id="error-messages">
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title" id="error-title">Loading data</h3>
+							</div>
+							<div class="panel-body" id="error-text"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="river-data">
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="panel" id="alert-box-message">
+							<div class="panel-heading">
+								<h3 class="panel-title" id="alert-box-message-title"></h3>
+							</div>
+							<div class="panel-body" id="alert-box-message-text"></div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-5">
+						<p id="para1"></p>
+						<p class="text-muted" id="last-updated"></p>
+					</div>
+					<div class="col-sm-7">
+						<div class="row" style="margin-bottom:10px">
+							<div class="col-sm-4">
+								<div class="input-group">
+									<span class="input-group-addon primary"><span data-toggle="tooltip" data-placement="bottom" title="Current depth of water" class="glyphicon glyphicon-tint" aria-hidden="true"></span></span>
+									<div class="form-control addon-box primary"><span class="current-depth"></span></div>
+								</div>
+							</div>
+							<div class="col-sm-4">
+								<div class="input-group">
+									<span data-toggle="tooltip" data-placement="bottom" title="How high is the water?" class="input-group-addon primary" id="marker-level">&nbsp;</span>
+									<div class="form-control addon-box primary" id="marker-level-text"></div>
+								</div>
+							</div>
+							<div class="col-sm-4">
+								<div class="input-group">
+									<span class="input-group-addon" id="marker-rising"><span  data-toggle="tooltip" data-placement="bottom" title="How is the water level changing compared to yesterday?" id="marker-rising-icon" class="glyphicon" aria-hidden="true"></span></span>
+									<div class="form-control addon-box" id="marker-rising-text"></div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-sm-12">
+								<div class="input-group">
+									<span class="input-group-addon default" id="marker-warning"><span  data-toggle="tooltip" data-placement="bottom" title="Flood warning" id="marker-warning-icon" class="glyphicon" aria-hidden="true"></span></span>
+									<div class="form-control addon-box default" id="marker-warning-text"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-6">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title"><span class="glyphicon glyphicon-stats" aria-hidden="true"></span>&nbsp;&nbsp;Facts about <span class="river-location"></span></h3>
+							</div>
+							<table class="table table-condensed table-bordered">
+								<tbody>
+									<tr>
+										<td>The depth is below <span class="current-depth"></span> <span id="current-depth-percentile-rank"></span>% of the time.</td>
+									</tr>
+									<tr>
+										<td>90% of the time it is between <span id="current-depth-minimum"></span> and <span id="current-depth-maximum"></span>.</td>
+									</tr>
+									<tr>
+										<td>The most common depth is <span id="current-depth-most-common"></span>.</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span>&nbsp;&nbsp;What is the usual depth on <span id="day-average-date"></span>?</h3>
+							</div>
+							<table class="table table-condensed table-bordered">
+								<tbody>
+									<tr>
+										<td colspan="2" id="day-average-no-data">We have no data for this date yet!</td>
+										<td class="average-hide">Average depth</td>
+										<td class="average-hide"><span id="day-average"></span></td>
+									</tr>
+									<tr class="average-hide">
+										<td>Highest level</td>
+										<td><span id="day-average-high"></span></td>
+									</tr>
+									<tr class="average-hide">
+										<td>Lowest level</td>
+										<td><span id="day-average-low"></span></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="col-sm-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title"><span class="glyphicon glyphicon-star" aria-hidden="true"></span>&nbsp;&nbsp;Records</h3>
+							</div>
+							<table class="table table-condensed table-bordered">
+								<tbody>
+									<tr>
+										<td>Highest ever level</td>
+										<td><span id="highest-ever"></span></td>
+										<td>Recorded on <span id="highest-ever-date"></span>.</td>
+									</tr>
+									<tr>
+										<td>Lowest ever level</td>
+										<td><span id="lowest-ever"></span></td>
+										<td>Recorded on <span id="lowest-ever-date"></span>.</td>
+									</tr>
+									<tr><td colspan="3"><p id="environment-agency-message"></p></td></tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span>&nbsp;&nbsp;A chart showing the depth of water in <span class="river-location"> over time</span></h3>
+							</div>
+							<div class="panel-body">
+								<div id="graph-div"></div>
+								<p>Use your mouse to alter the date range on the thin lower graph showing all our data or pick a pre-defined zoom range at the top of the chart.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>&nbsp;&nbsp;Where does this data come from?</h3>
+							</div>
+							<div class="panel-body">
+								<p>The data is obtained directly from the <a href="https://flood-warning-information.service.gov.uk/" title="Environment Agency">Environment Agency</a> and is usually updated once or twice a day.  The frequency of the updates is increased when there is a greater chance of flooding or the level is outside the usual range.</p>
+								<p>The approximate locations of the recording stations are shown on the map below.</p>
+								<div id="map"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- load all the javascript needed -->
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highstock/4.2.3/highstock.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.12.0/moment.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+		<script type="text/javascript" src="js/flood.js"></script>
+  </body>
+</html>
