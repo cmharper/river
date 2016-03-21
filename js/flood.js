@@ -802,12 +802,12 @@ $(document).ready(function() {
 	// loop through all the items in the object
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
-			var myurl = "fail";
-			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
+			//var myurl = "fail";
+			var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
 			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods";
 			// when we have downloaded the flood warning either display an
 			// error or process it
-			$.when($.ajax({ url: myurl, message: "<br>Fetching flood warnings for " + k +"." }), k)
+			$.when($.ajax({ url: myurl, dataType: 'jsonp', message: "<br>Fetching flood warnings for " + k +"." }), k)
 			.always(function(a, key) {
 				if (key == "error") {
 					details[k]["warning"] = 100;
@@ -817,11 +817,13 @@ $(document).ready(function() {
 			});
 			// when we have downloaded the river data either display an
 			// error or process it
-			$.when($.ajax({ url: details[k]["spreadsheet"], message: "<br>Fetching river levels for " + k +"." }),k)
+			$.when($.ajax({ url: details[k]["spreadsheet"], dataType: 'jsonp', message: "<br>Fetching river levels for " + k +"." }),k)
 			.always(function(a, key) {
 				if (key == "error") {
 					$("#error-title").html("Error");
 					$("#error-text").html("<p>Well, that wasn't supposed to happen!</p><p>There has been an error collecting the data for " + k + ".  Please try again or later if you keep getting this message.</p>").show();
+					// stop the timer
+					clearTimeout(dots);
 				} else {
 					if ($("#error-title").text() !== "Error") {
 						$.when(processRiverData(key, a[0])).done(function() {
