@@ -32,7 +32,7 @@
 							<div class="panel-heading">
 								<h3 class="panel-title" id="error-title">Loading data</h3>
 							</div>
-							<div class="panel-body" id="error-text"></div>
+							<div class="panel-body" id="error-text"><span>This will take a few moments (dependent on the speed of your internet connection as we need to download 1-2Mb of data).</span></div>
 						</div>
 					</div>
 				</div>
@@ -63,13 +63,13 @@
 							</div>
 							<div class="col-sm-4">
 								<div class="input-group">
-									<span data-toggle="tooltip" data-placement="bottom" title="How high is the water?" class="input-group-addon primary" id="marker-level">&nbsp;</span>
+									<span data-toggle="tooltip" data-placement="bottom" data-html="true" title="A description of the depth<br>of the water" class="input-group-addon primary" id="marker-level">&nbsp;</span>
 									<div class="form-control addon-box primary" id="marker-level-text"></div>
 								</div>
 							</div>
 							<div class="col-sm-4">
 								<div class="input-group">
-									<span class="input-group-addon" id="marker-rising"><span  data-toggle="tooltip" data-placement="bottom" title="How is the water level changing compared to yesterday?" id="marker-rising-icon" class="glyphicon" aria-hidden="true"></span></span>
+									<span class="input-group-addon" id="marker-rising"><span data-html="true" data-toggle="tooltip" data-placement="bottom" title="How is the water level changing<br>compared to the previous day<br>we have data for?" id="marker-rising-icon" class="glyphicon" aria-hidden="true"></span></span>
 									<div class="form-control addon-box" id="marker-rising-text"></div>
 								</div>
 							</div>
