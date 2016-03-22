@@ -723,7 +723,7 @@ var details = {
 		"ea max dates": [1389235500],
 		"ea minimum": 0,
 		"ea min dates": [782703000],
-		"warning": 99,
+		"warning": 100,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -745,7 +745,7 @@ var details = {
 		"ea max dates": [],
 		"ea minimum": null,
 		"ea min dates": [],
-		"warning": 99,
+		"warning": 100,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -767,7 +767,7 @@ var details = {
 		"ea max dates": [1388885400],
 		"ea minimum": 4.9,
 		"ea min dates": [904590900],
-		"warning": 99,
+		"warning": 100,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -789,7 +789,7 @@ var details = {
 		"ea max dates": [],
 		"ea minimum": null,
 		"ea min dates": [],
-		"warning": 99,
+		"warning": 100,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
