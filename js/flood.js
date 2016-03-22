@@ -832,8 +832,9 @@ $(document).ready(function() {
 	// loop through all the items in the object
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
-			var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
+			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
 			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods";
+			var myurl = "fail";
 			// when we have downloaded the flood warning either display an
 			// error or process it
 			$.when($.ajax({ url: myurl, dataType: 'json', message: "<br>Fetching flood warnings for " + k +"." }), k)
