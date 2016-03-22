@@ -723,7 +723,7 @@ var details = {
 		"ea max dates": [1389235500],
 		"ea minimum": 0,
 		"ea min dates": [782703000],
-		"warning": 100,
+		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -745,7 +745,7 @@ var details = {
 		"ea max dates": [],
 		"ea minimum": null,
 		"ea min dates": [],
-		"warning": 100,
+		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -767,7 +767,7 @@ var details = {
 		"ea max dates": [1388885400],
 		"ea minimum": 4.9,
 		"ea min dates": [904590900],
-		"warning": 100,
+		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -789,7 +789,7 @@ var details = {
 		"ea max dates": [],
 		"ea minimum": null,
 		"ea min dates": [],
-		"warning": 100,
+		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
 		"latest date": null
@@ -832,9 +832,9 @@ $(document).ready(function() {
 	// loop through all the items in the object
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
-			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
+			var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
 			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods";
-			var myurl = "fail";
+			//var myurl = "fail";
 			// when we have downloaded the flood warning either display an
 			// error or process it
 			$.when($.ajax({ url: myurl, dataType: 'json', message: "<br>Fetching flood warnings for " + k +"." }), k)
