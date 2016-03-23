@@ -310,7 +310,7 @@ function create_page(k) {
 	// set where the data is for, the current level and when it was taken
 	$(".river-location").html(k + details[k]["type"]);
 	$(".current-depth").html(todays_value + details[k]["units"]);
-	try { $("#last-updated").html("Last updated: " + moment.unix(details[k]["latest date"]).format("Do MMMM YYYY [at] HH:mm")).show(); }
+	try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[k]["latest date"])) + " ("+moment.unix(details[k]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
 	catch (e) { $("#last-updated").hide(); }
 
 	// assign the marker for the level and how high it is
@@ -805,9 +805,9 @@ $( document ).ajaxSend(function( event, request, settings ) {
 	};
 });
 
-// add a timer than adds dots to indicate loading
+// add timers
 var dots = window.setInterval( function() { $( "#error-title, #error-text span:last" ).append( "." ); }, 750),
-		apology = window.setInterval( function() { $( "#error-text" ).append( "<br><span>This is taking longer than expected, please hold or try again later.  We are still working on getting the data for you.</span>" ); }, 10000) ;
+		apology = window.setInterval( function() { $( "#error-text" ).append( "<br><span>This is taking longer than expected, please hold or try again later.  We are still working on getting the data for you.</span>" ); }, 10000);
 
 // -------- WHERE THE FUN BEGINS -------------------------------------//
 $(document).ready(function() {
@@ -868,6 +868,12 @@ $(document).ready(function() {
 				}
 				// show the first tab
 				create_page($(".nav-tabs a:first").text());
+				//marker[$(".nav-tabs a:first").text()].openPopup();
+				// set a timer to update the last updated time
+				var last_updated_time = window.setInterval( function() { 
+					try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).add(85,"minutes")) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
+					catch (e) { $("#last-updated").hide(); }
+				}, 60000);
 				// make everything visible
 				$("#error-messages").hide();
 				$(".nav").show();
