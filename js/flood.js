@@ -837,7 +837,7 @@ $(document).ready(function() {
 			//var myurl = "fail";
 			// when we have downloaded the flood warning either display an
 			// error or process it
-			$.when($.ajax({ url: myurl, dataType: 'json', message: "<br>Fetching flood warnings for " + k +"." }), k)
+			$.when($.ajax({ url: myurl, dataType: 'jsonp', message: "<br>Fetching flood warnings for " + k +"." }), k)
 			.always(function(a, key) {
 				// don't fail on error just show the user a warning
 				if (key == "error") {
