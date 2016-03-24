@@ -505,18 +505,18 @@ function percentRank(arr, v) {
 }
 
 // function that processes the flood warnings and prints them to screen
-function processFloodData(obj, data) {
+function processFloodData(k, data) {
 	//try {
 		if (data["items"].length > 0) {
 			for (i = 0; i < data["items"].length; i++) {
-				if (data["items"][i]["severityLevel"] < obj["warning"]) {
-					obj["warning"] = data["items"][i]["severityLevel"]
+				if (data["items"][i]["severityLevel"] < details[k]["warning"]) {
+					details[k]["warning"] = data["items"][i]["severityLevel"]
 				};
 				var img = "";
 				if (data["items"][i]["severityLevel"] >= 1 && data["items"][i]["severityLevel"] <= 3) {
 					img = "<img class=\"pull-left\" src=\"images/flood/" + data["items"][i]["severityLevel"] + ".jpg\" title=\"" + data["items"][i]["severity"] + "\" />";
 				}
-				obj["warning messages"].push("<p>" + img + "<strong>" + data["items"][i]["severity"] + ": " + data["items"][i]["description"] + "</strong><br><span class=\"text-muted\">Last updated: " + moment(data["items"][i]["timeMessageChanged"]).format("Do MMMM YYYY [at] HH:mm") + "</span><br>" + data["items"][i]["message"] + "</p>");
+				details[k]["warning messages"].push("<p>" + img + "<strong>" + data["items"][i]["severity"] + ": " + data["items"][i]["description"] + "</strong><br><span class=\"text-muted\">Last updated: " + moment(data["items"][i]["timeMessageChanged"]).format("Do MMMM YYYY [at] HH:mm") + "</span><br>" + data["items"][i]["message"] + "</p>");
 			}
 		}
 	//} catch (e) { showError() };
@@ -809,40 +809,52 @@ $( document ).ajaxSend(function( event, request, settings ) {
 var dots = window.setInterval( function() { $( "#error-title, #error-text span:last" ).append( "." ); }, 750),
 		apology = window.setInterval( function() { $( "#error-text" ).append( "<br><span>This is taking longer than expected, please hold or try again later.  We are still working on getting the data for you.</span>" ); }, 10000);
 
+
 // -------- WHERE THE FUN BEGINS -------------------------------------//
 $(document).ready(function() {
-
+	// add all the tooltips
+	$('[data-toggle="tooltip"]').tooltip();
+	// what to do when a tab is clicked
+	$('.nav-tabs a').click(function(e) {
+		e.preventDefault();
+		create_page( $(e.target).text() );
+	})
+	// hide all the tabs, we will show them when we have data on them
+	$(".nav-tabs li").hide();
+	
 	// start a leaflet map object
 	var mymap = L.map('map').setView([51.1858, -2.01874], 12);
+	mymap.scrollWheelZoom.disable();
 	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
 		maxZoom: 18,
 		id: 'cmharper.peo9a1fg',
 		accessToken: 'pk.eyJ1IjoiY21oYXJwZXIiLCJhIjoiY2lseXM4bWIxMDBoNHVvbTQyaWxybmkzdiJ9.dUIGzsKI6FbWnAd8dsAdcQ'
 	}).addTo(mymap);
-	mymap.scrollWheelZoom.disable();
 
-	// initialise an array to hold the markers on the map, a counter to
-	// check whether all the data has been processed and count the number
-	// of items in the object to process
-	var marker = [],
-		complete = 0,
-		details_size = countProperties(details);
+	// initialise an array to hold the markers on the map
+	var marker = [];
 	
-	// loop through all the items in the object
+	// loop through all the items in the object and get the flood warnings
+	// these are on google to avoid CORS
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
-			var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods?lat="+details[k]['latitude']+"&long="+details[k]['longitude']+"&dist=25";
-			//var myurl = "https://environment.data.gov.uk/flood-monitoring/id/floods";
+			// define the url
+			var myurl = "https://script.google.com/macros/s/AKfycbwOUxqNA-rvJ-qbh1wH-sVo7Y9HDQlEDsySXWAAAXozI5guZzI/exec";
 			//var myurl = "fail";
-			// when we have downloaded the flood warning either display an
-			// error or process it
-			$.when($.ajax({ url: myurl, dataType: 'jsonp', ,
-        headers: {
-
-                    'Access-Control-Allow-Origin': "https://environment.data.gov.uk/"
-
-                       }, message: "<br>Fetching flood warnings for " + k +"." }), k)
+			// start getting the flood warnings in the background
+			$.when($.ajax({ 
+					url: myurl,
+					type: "POST",
+					dataType: "json",
+					data: { 
+						url: details[k]['id'],
+						latitude: details[k]['latitude'],
+						longitude: details[k]['longitude']
+					},
+					message: "<br>Fetching flood warnings for " + k +"."
+			}), k)
+			// always do this when we have downloaded the data
 			.always(function(a, key) {
 				// don't fail on error just show the user a warning
 				if (key == "error") {
@@ -854,49 +866,104 @@ $(document).ready(function() {
 		};
 	};
 	
-	// lets try to get the data if we don't have an error
+	// lets try to get the data for the first tab if we don't 
+	// have an error
 	if ($("#error-title").text() !== "Error") {
-		$.when($.ajax({ url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec", message: "<br>Fetching the water level data." }) )
-		.fail( function() {
+		// the place name on the first tab is
+		var this_location = $(".nav-tabs a:first").text();
+		if (! details.hasOwnProperty(this_location)) {
 			showError();
-		})
-		.done(function(a, key) {
-			//try {
-				for (var k in a) {
-					if (details.hasOwnProperty(k)) {
-						// get the data for each location from the downloaded data
-						$( "#error-text span:last" ).append( "<br>Processing the data for "+k );
-						processRiverData(k, a[k]);
-						// add a marker to the map
-						marker[k] = L.marker([details[k]['latitude'], details[k]['longitude']]).addTo(mymap).bindPopup("<b>"+k + details[k]["type"]+"</b><br>Current depth: "+details[k]["pairs"][details[k]["latest date"]]+details[k]["units"]);
-					}
-				}
-				// show the first tab
-				create_page($(".nav-tabs a:first").text());
-				//marker[$(".nav-tabs a:first").text()].openPopup();
-				// set a timer to update the last updated time
-				var last_updated_time = window.setInterval( function() { 
-					try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).add(85,"minutes")) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
-					catch (e) { $("#last-updated").hide(); }
-				}, 60000);
-				// make everything visible
-				$("#error-messages").hide();
-				$(".nav").show();
-				$("#river-data").show();
-				// stop the timers
-				clearTimeout(apology);
-				clearTimeout(dots);
-				// re-size the map
-				mymap.invalidateSize();
-			//} catch (e) { showError() };
-		});
+		} else {
+			// get this information in the background
+			$.when($.ajax({ url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec?place="+encodeURIComponent(this_location), message: "<br>Fetching the water level data for "+this_location+"." }), this_location )
+			// show an error message if we haven't got this data
+			.fail( function() {
+				showError();
+			})
+			// otherwise always do this
+			.always(function(a, key) {
+				//try {
+					// show a progress message and process the data
+					$( "#error-text span:last" ).append( "<br>Processing the data for "+key );
+					processRiverData(key, a[0][key]);
+					// add a marker to the map
+					marker[key] = L.marker([details[key]['latitude'], details[key]['longitude']]).addTo(mymap).bindPopup("<b>"+key + details[key]["type"]+"</b><br>Current depth: "+details[key]["pairs"][details[key]["latest date"]]+details[key]["units"]);
+					// show the first tab
+					create_page(key);
+					// set a timer to update the last updated time
+					var last_updated_time = window.setInterval( function() { 
+						try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).add(85,"minutes")) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
+						catch (e) { $("#last-updated").hide(); }
+					}, 60000);
+					// make everything visible
+					$("#error-messages").hide();
+					$(".nav-tabs li:first").show();
+					$(".nav").show();
+					$("#river-data").show();
+					// re-size the map
+					mymap.invalidateSize();
+					
+					// now let's get the data for the other locations/tabs
+					var tab_counter = 1;
+					$(".nav-tabs a").each( function(n) {
+						// skip the first one as we've already done it
+						if (n > 0) {
+							// what is the place name on this tab
+							this_location = $(this).text();
+							// if we have details about it download the data in the
+							// background
+							if (details.hasOwnProperty(this_location)) {
+								$.when(
+									$.ajax( { 
+											url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec?place="+encodeURIComponent(this_location),
+											message: "<br>Fetching the water level data for "+this_location+"."
+									}),
+									this_location,
+									n
+								)
+								// don't worry too much if we don't get this information
+								// just do the minimum
+								.fail( function() {
+									// increment the tab-counter and if this is 4 then stop the timers
+									tab_counter++;
+									if ( tab_counter == 4 ) {
+										// stop the timers
+										clearTimeout(apology);
+										clearTimeout(dots);
+										// open the pop-up on the map
+										marker[$("ul.nav-tabs li.active").text()].openPopup();
+									};
+								})
+								// when we have data always do this
+								.always(function(a, key, n) {
+									//try {
+										// show a progress message
+										$( "#error-text span:last" ).append( "<br>Processing the data for "+key );
+										processRiverData(key, a[0][key]);
+										// add a marker to the map
+										marker[key] = L.marker([details[key]['latitude'], details[key]['longitude']]).addTo(mymap).bindPopup("<b>"+key + details[key]["type"]+"</b><br>Current depth: "+details[key]["pairs"][details[key]["latest date"]]+details[key]["units"]);
+										// show the tab
+										$(".nav-tabs li").eq(n).show();
+										// increment the tab-counter and if this is the same
+										// as the total number of tabs then stop the timers
+										// as we have processed all the tabs
+										tab_counter++;
+										if ( tab_counter == $(".nav-tabs a").length ) {
+											// stop the timers
+											clearTimeout(apology);
+											clearTimeout(dots);
+											// open the pop-up on the map
+											marker[$("ul.nav-tabs li.active").text()].openPopup();
+										};
+									//} catch (e) { showError() };
+								});
+							}
+						}
+					});
+				//} catch (e) { showError() };
+			});
+		};
 	}
-	// add all the tooltips
-	$('[data-toggle="tooltip"]').tooltip();
-	// what to do when a tab is clicked
-	$('.nav-tabs a').click(function(e) {
-		e.preventDefault();
-		create_page( $(e.target).text() );
-	})
+	
 });
 // -------- WHERE THE FUN ENDS ---------------------------------------//
