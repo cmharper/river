@@ -892,7 +892,7 @@ $(document).ready(function() {
 					create_page(key);
 					// set a timer to update the last updated time
 					var last_updated_time = window.setInterval( function() { 
-						try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).add(85,"minutes")) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
+						try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"])) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
 						catch (e) { $("#last-updated").hide(); }
 					}, 60000);
 					// make everything visible
