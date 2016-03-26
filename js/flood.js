@@ -335,9 +335,15 @@ function create_page(k) {
 	catch (e) { $("#current-depth-most-common").closest("tr").hide(); }
 	
 	// assign the paragraph of text
-	try {
-		$("#para1").html("The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(yesterdays_value[0], todays_value, details[k]["units"], dp) + " "+yesterdays_value[2]+" and " + raised(last_weeks_value[0], todays_value, details[k]["units"], dp) + " "+last_weeks_value[2]+".").show(); }
-	catch (e) { $("#para1").hide(); }
+	//try {
+			var desc = "The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(yesterdays_value[0], todays_value, details[k]["units"], dp) + " "+yesterdays_value[2]+" and " + raised(last_weeks_value[0], todays_value, details[k]["units"], dp) + " "+last_weeks_value[2]+".";
+			// if this data is more than a day old
+			console.log(parseInt(moment().unix())-parseInt(details[k]["latest date"]));
+			if ( parseInt(moment().unix())-parseInt(details[k]["latest date"]) > 86400 ) {
+				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ").replace(/\ since\ /g," from ");
+			}
+			$("#level-description").html(desc).show();
+	//} catch (e) { $("#para1").hide(); }
 
 	// do the what is the usual depth panel
 	$("#day-average-date").html(current.format("Do MMMM"));
@@ -698,6 +704,11 @@ function whatisthelevel(p) {
 	}
 }
 
+// returns currently if the reading was recent
+function whenwasthereading(key) {
+	return (parseInt(moment().unix())-parseInt(details[key]["latest date"]) <= 10800 ) ? [ "is currently ", "is " ] : [ "was ", "was " ];
+}
+
 // -------- END OF DECLARATION OF FUNCTIONS --------------------------//
 
 // -------- GLOBAL VARIABLES -----------------------------------------//
@@ -875,7 +886,15 @@ $(document).ready(function() {
 			showError();
 		} else {
 			// get this information in the background
-			$.when($.ajax({ url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec?place="+encodeURIComponent(this_location), message: "<br>Fetching the water level data for "+this_location+"." }), this_location )
+			$.when($.ajax({ 
+					url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec",
+					type: "POST",
+					dataType: "json",
+					data: { 
+						place: encodeURIComponent(this_location)
+					},
+					message: "<br>Fetching the water level data for "+this_location+"."
+			}), this_location )
 			// show an error message if we haven't got this data
 			.fail( function() {
 				showError();
@@ -915,7 +934,12 @@ $(document).ready(function() {
 							if (details.hasOwnProperty(this_location)) {
 								$.when(
 									$.ajax( { 
-											url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec?place="+encodeURIComponent(this_location),
+											url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec",
+											type: "POST",
+											dataType: "json",
+											data: { 
+												place: encodeURIComponent(this_location)
+											},
 											message: "<br>Fetching the water level data for "+this_location+"."
 									}),
 									this_location,
