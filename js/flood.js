@@ -340,7 +340,7 @@ function create_page(k) {
 			// if this data is more than a day old
 			console.log(parseInt(moment().unix())-parseInt(details[k]["latest date"]));
 			if ( parseInt(moment().unix())-parseInt(details[k]["latest date"]) > 86400 ) {
-				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ").replace(/\ since\ /g," from ");
+				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ");
 			}
 			$("#level-description").html(desc).show();
 	//} catch (e) { $("#para1").hide(); }
