@@ -44,6 +44,9 @@ body {
 #river-data {
 	display: none;
 }
+#alert-box-message-text p { 
+	clear:both;
+}
 #river-data,
 #error-messages {
 	border: 2px solid rgb(40, 94, 142);

@@ -136,50 +136,6 @@ function create_page(k) {
 		var thelevelis = whatisthelevel(current_percentile);
 	//} catch (e) { showError() };
 	
-	// that is all the calculations done, now let's do some styling
-	// do the warning box, there are 4 possible flood warning levels plus a few for errors
-	$("#alert-box-message-text").html(details[k]["warning messages"].join(""));
-	if (details[k]["warning"] == 4) {
-		$("#marker-warning").removeClass("warning danger default").addClass("info");
-		$("#marker-warning-text").html("The warning no longer in force").removeClass("warning danger default").addClass("info");
-		$("#marker-warning-icon").removeClass("glyphicon-alert").addClass("glyphicon-thumbs-up");
-		$("#alert-box-message-title").html("The warning no longer in force");
-		$("#alert-box-message-text").append("<p><strong>The warning no longer in force.</strong></p>");
-		$("#alert-box-message").removeClass("panel-warning-bold panel-danger-bold panel-default").addClass("panel-info").show();
-	} else if (details[k]["warning"] == 3) {
-		$("#marker-warning").removeClass("info danger default").addClass("warning");
-		$("#marker-warning-text").html("<strong>Flood Alert:	Flooding is possible, be prepared</strong>").removeClass("info danger default").addClass("warning");
-		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
-		$("#alert-box-message-title").html("Flood Alert:	Flooding is possible, be prepared");
-		$("#alert-box-message").removeClass("panel-info panel-danger-bold panel-info").addClass("panel-warning-bold").show();
-	} else if (details[k]["warning"] == 2) {
-		$("#marker-warning").removeClass("warning info default").addClass("danger");
-		$("#marker-warning-text").html("<strong>Flood Warning:	Flooding is expected, immediate action is required</strong>").removeClass("warning info default").addClass("danger");
-		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
-		$("#alert-box-message-title").html("Flood Warning:	Flooding is expected, immediate action is required");
-		$("#alert-box-message").removeClass("panel-warning-bold panel-info panel-info").addClass("panel-danger-bold").show();
-	} else if (details[k]["warning"] == 1) {
-		$("#marker-warning").removeClass("warning info default").addClass("danger");
-		$("#marker-warning-text").html("<strong>Severe Flood Warning:	Severe flooding, danger to life</strong>").removeClass("warning info default").addClass("danger");
-		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
-		$("#alert-box-message-title").html("Severe Flood Warning:	Severe flooding, danger to life");
-		$("#alert-box-message").removeClass("panel-warning-bold panel-info panel-info").addClass("panel-danger-bold").show();
-	} else if (details[k]["warning"] == 100) {
-		$("#marker-warning").removeClass("info danger default").addClass("warning");
-		$("#marker-warning-text").html("<strong>Error collecting flood warning data</strong>").removeClass("info danger default").addClass("warning");
-		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
-		$("#alert-box-message-title").html("Error collecting data the flood warning data");
-		$("#alert-box-message-text").append("<p>There was an error collecting the flood warning data.  This means our data may be out of date or incorrect.  Please refresh this page or try again later if the problem persists.</p><p>Click <a href=\"https://flood-warning-information.service.gov.uk/\" title=\"Environment Agency Flood Warnings\">here</a> to view the latest flood warnings on the Environment Agency website.</p>");
-		$("#alert-box-message").removeClass("panel-info panel-danger-bold panel-info").addClass("panel-warning-bold").show();
-	} else {
-		$("#marker-warning").removeClass("warning danger info").addClass("default");
-		$("#marker-warning-text").html("There are no flood warnings in place for the " + k + " area").removeClass("warning danger info").addClass("default");
-		$("#marker-warning-icon").removeClass("glyphicon-alert").addClass("glyphicon-thumbs-up");
-		$("#alert-box-message-title").html("Nothing to see here, move along");
-		$("#alert-box-message-text").append("<p><strong>Nothing to see here, move along.</strong></p>");
-		$("#alert-box-message").removeClass("panel-warning-bold panel-danger-bold panel-info").addClass("panel-default").hide();
-	}
-
 	// set the marker showing whether the level is rising or not
 	if (todays_value < yesterdays_value[0]) {
 		$("#marker-rising").removeClass("danger default").addClass("warning");
@@ -338,7 +294,6 @@ function create_page(k) {
 	//try {
 			var desc = "The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(yesterdays_value[0], todays_value, details[k]["units"], dp) + " "+yesterdays_value[2]+" and " + raised(last_weeks_value[0], todays_value, details[k]["units"], dp) + " "+last_weeks_value[2]+".";
 			// if this data is more than a day old
-			console.log(parseInt(moment().unix())-parseInt(details[k]["latest date"]));
 			if ( parseInt(moment().unix())-parseInt(details[k]["latest date"]) > 86400 ) {
 				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ");
 			}
@@ -459,7 +414,7 @@ function mode(ary) {
 }
 
 // find the nearest number in the object
-function nearest( noofdays, obj ) {
+function nearest( noofdays, obj, dp ) {
 	var found = 0,
 			previous = 0,
 			diff = 86400*parseInt(noofdays);
@@ -468,10 +423,11 @@ function nearest( noofdays, obj ) {
 		if ( ( parseInt(i) + diff ) >= obj["latest date"] ) { found = previous; break }
 		previous = found;
 	}
-	previous = parseInt(moment.unix(obj["latest date"]).startOf("day")-moment.unix(found).startOf("day"))/86400000;
-	if ( previous == 1 ) { previous = "yesterday" } 
+	previous = Math.round(parseInt(moment.unix(obj["latest date"]).startOf("day")-moment.unix(found).startOf("day"))/86400000);
+	if ( previous == 1 ) { previous = "yesterday" }
+	else if ( previous > 1 && previous < 7 ) { previous = moment().startOf("day").subtract(previous,"days").format("dddd"); }
 	else if ( previous == 7 ) { previous = "a week ago" } 
-	else { previous = previous+" days ago" };
+	else { previous = previous.toFixed(0)+" days ago" };
 	return [ mean(obj["daily values"][moment.unix(found).startOf('day').unix()]), found, previous ];
 }
 
@@ -513,16 +469,18 @@ function percentRank(arr, v) {
 // function that processes the flood warnings and prints them to screen
 function processFloodData(k, data) {
 	//try {
-		if (data["items"].length > 0) {
-			for (i = 0; i < data["items"].length; i++) {
-				if (data["items"][i]["severityLevel"] < details[k]["warning"]) {
-					details[k]["warning"] = data["items"][i]["severityLevel"]
-				};
-				var img = "";
-				if (data["items"][i]["severityLevel"] >= 1 && data["items"][i]["severityLevel"] <= 3) {
-					img = "<img class=\"pull-left\" src=\"images/flood/" + data["items"][i]["severityLevel"] + ".jpg\" title=\"" + data["items"][i]["severity"] + "\" />";
+		if ( typeof data["items"] !== "undefined" ) {
+			if (data["items"].length > 0) {
+				for (i = 0; i < data["items"].length; i++) {
+					if (data["items"][i]["severityLevel"] < details[k]["warning"]) {
+						details[k]["warning"] = data["items"][i]["severityLevel"]
+					};
+					var img = "";
+					if (data["items"][i]["severityLevel"] >= 1 && data["items"][i]["severityLevel"] <= 3) {
+						img = "<img class=\"pull-left\" src=\"images/flood/" + data["items"][i]["severityLevel"] + ".jpg\" title=\"" + data["items"][i]["severity"] + "\" />";
+					}
+					details[k]["warning messages"].push("<p>" + img + "<strong>" + data["items"][i]["severity"] + ": " + data["items"][i]["description"] + "</strong><br><span class=\"text-muted\">Last updated: " + moment(data["items"][i]["timeMessageChanged"]).format("Do MMMM YYYY [at] HH:mm") + "</span><br>" + data["items"][i]["message"] + "</p>");
 				}
-				details[k]["warning messages"].push("<p>" + img + "<strong>" + data["items"][i]["severity"] + ": " + data["items"][i]["description"] + "</strong><br><span class=\"text-muted\">Last updated: " + moment(data["items"][i]["timeMessageChanged"]).format("Do MMMM YYYY [at] HH:mm") + "</span><br>" + data["items"][i]["message"] + "</p>");
 			}
 		}
 	//} catch (e) { showError() };
@@ -555,7 +513,6 @@ function processRiverData(k, data) {
 			} else {
 				this_line[0] = parseInt(100*parseFloat(parseFloat(this_line[0])+parseFloat(first_line)));
 			}
-			//parseInt(100*parseInt(parseFloat(this_line[0])+parseFloat(first_line)));
 			this_line[1] = parseFloat(multiplier * this_line[1]);
 			
 			// check the types
@@ -572,7 +529,7 @@ function processRiverData(k, data) {
 				// add the value to the readings array
 				details[k]["readings"].push(this_line[1]);
 				// make the daily array
-				var daily_time = parseInt(this_line[0] / 86400) * 86400;
+				var daily_time = moment.unix(this_line[0]).startOf("day").unix();
 				if (typeof details[k]["daily values"][daily_time] == "undefined") {
 					details[k]["daily values"][daily_time] = []
 				};
@@ -631,6 +588,53 @@ function scrollToTop() {
 	}, 500, 'linear');
 }
 
+// display the flood warnings
+function showFloodWarnings(k) {
+	// that is all the calculations done, now let's do some styling
+	// do the warning box, there are 4 possible flood warning levels plus a few for errors
+	$("#alert-box-message-text").html(details[k]["warning messages"].join(""));
+	if (details[k]["warning"] == 4) {
+		$("#marker-warning").removeClass("warning danger default").addClass("info");
+		$("#marker-warning-text").html("The warning no longer in force").removeClass("warning danger default").addClass("info");
+		$("#marker-warning-icon").removeClass("glyphicon-alert").addClass("glyphicon-thumbs-up");
+		$("#alert-box-message-title").html("The warning no longer in force");
+		$("#alert-box-message-text").append("The warning no longer in force.");
+		$("#alert-box-message").removeClass("panel-warning-bold panel-danger-bold panel-default").addClass("panel-info").show();
+	} else if (details[k]["warning"] == 3) {
+		$("#marker-warning").removeClass("info danger default").addClass("warning");
+		$("#marker-warning-text").html("Flood Alert:	Flooding is possible, be prepared").removeClass("info danger default").addClass("warning");
+		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
+		$("#alert-box-message-title").html("Flood Alert:	Flooding is possible, be prepared");
+		$("#alert-box-message").removeClass("panel-info panel-danger-bold panel-default").addClass("panel-warning-bold").show();
+	} else if (details[k]["warning"] == 2) {
+		$("#marker-warning").removeClass("warning info default").addClass("danger");
+		$("#marker-warning-text").html("Flood Warning:	Flooding is expected, immediate action is required").removeClass("warning info default").addClass("danger");
+		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
+		$("#alert-box-message-title").html("Flood Warning:	Flooding is expected, immediate action is required");
+		$("#alert-box-message").removeClass("panel-warning-bold panel-info panel-default").addClass("panel-danger-bold").show();
+	} else if (details[k]["warning"] == 1) {
+		$("#marker-warning").removeClass("warning info default").addClass("danger");
+		$("#marker-warning-text").html("Severe Flood Warning:	Severe flooding, danger to life").removeClass("warning info default").addClass("danger");
+		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
+		$("#alert-box-message-title").html("Severe Flood Warning:	Severe flooding, danger to life");
+		$("#alert-box-message").removeClass("panel-warning-bold panel-info panel-default").addClass("panel-danger-bold").show();
+	} else if (details[k]["warning"] == 100) {
+		$("#marker-warning").removeClass("info danger default").addClass("warning");
+		$("#marker-warning-text").html("Error collecting flood warning data").removeClass("info danger default").addClass("warning");
+		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
+		$("#alert-box-message-title").html("Error collecting data the flood warning data");
+		$("#alert-box-message-text").append("<p>There was an error collecting the flood warning data.  This means our data may be out of date or incorrect.  Please refresh this page or try again later if the problem persists.</p><p>Click <a href=\"https://flood-warning-information.service.gov.uk/\" title=\"Environment Agency Flood Warnings\">here</a> to view the latest flood warnings on the Environment Agency website.</p>");
+		$("#alert-box-message").removeClass("panel-info panel-danger-bold panel-default").addClass("panel-warning-bold").show();
+	} else {
+		$("#marker-warning").removeClass("warning danger info").addClass("default");
+		$("#marker-warning-text").html("There are no flood warnings in place for the " + k + " area").removeClass("warning danger info").addClass("default");
+		$("#marker-warning-icon").removeClass("glyphicon-alert").addClass("glyphicon-thumbs-up");
+		$("#alert-box-message-title").html("Nothing to see here, move along");
+		$("#alert-box-message-text").append("Nothing to see here, move along.");
+		$("#alert-box-message").removeClass("panel-warning-bold panel-danger-bold panel-info").addClass("panel-default").hide();
+	}
+};
+
 // show an error message
 function showError() {
 	$("#error-title").html("Error").show();
@@ -662,9 +666,9 @@ function standardDeviation(values) {
 // returns an array with various strings depending on the level
 function whatisthelevel(p) {
 	if (p == 0) {
-		return ["Record low", {
-			"outside": " and a record low",
-			"within": " and a record low"
+		return ["Extremely low", {
+			"outside": " and extremely low",
+			"within": " and extremely low"
 		}]
 	} else if (p > 0 && p <= 20) {
 		return ["Very low", {
@@ -692,9 +696,9 @@ function whatisthelevel(p) {
 			"within": " but very high"
 		}]
 	} else if (p == 100) {
-		return ["Record high", {
-			"outside": " and a record high",
-			"within": " and a record high"
+		return ["Extremely high", {
+			"outside": " and extremely high",
+			"within": " and extremely high"
 		}]
 	} else {
 		return ["Unknown", {
@@ -818,7 +822,11 @@ $( document ).ajaxSend(function( event, request, settings ) {
 
 // add timers
 var dots = window.setInterval( function() { $( "#error-title, #error-text span:last" ).append( "." ); }, 750),
-		apology = window.setInterval( function() { $( "#error-text" ).append( "<br><span>This is taking longer than expected, please hold or try again later.  We are still working on getting the data for you.</span>" ); }, 10000);
+		apology = window.setInterval( function() { 
+			$( "#error-title" ).html( $( "#error-title" ).html().replace( /\.{1,}/g, "." ) );
+			$( "#error-text" ).html( $( "#error-text" ).html().replace( /\.{1,}/g, "." ) );
+			$( "#error-text" ).append( "<br><span>This is taking longer than expected, please hold or try again later.  We are still working on getting the data for you.</span>" ); 
+		}, 10000);
 
 
 // -------- WHERE THE FUN BEGINS -------------------------------------//
@@ -845,11 +853,13 @@ $(document).ready(function() {
 
 	// initialise an array to hold the markers on the map
 	var marker = [];
-	
+	throw "test"
 	// loop through all the items in the object and get the flood warnings
 	// these are on google to avoid CORS
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
+			// define a flood counter
+			var tab_flood_counter = 1;
 			// define the url
 			var myurl = "https://script.google.com/macros/s/AKfycbwOUxqNA-rvJ-qbh1wH-sVo7Y9HDQlEDsySXWAAAXozI5guZzI/exec";
 			//var myurl = "fail";
@@ -865,13 +875,30 @@ $(document).ready(function() {
 					},
 					message: "<br>Fetching flood warnings for " + k +"."
 			}), k)
+			.fail(function() {
+				// increment the tab-flood-counter and if this is the same
+				// as the number of tabs then stop the timers
+				tab_flood_counter++;
+				if ( tab_flood_counter == $(".nav-tabs a").length ) {
+					showFloodWarnings($("ul.nav-tabs li.active").text());
+				};
+			})
 			// always do this when we have downloaded the data
 			.always(function(a, key) {
 				// don't fail on error just show the user a warning
 				if (key == "error") {
 					details[k]["warning"] = 100;
 				} else {
-					$.when(processFloodData(key, a[0]));
+					// process the data if it is defined
+					if ( typeof a[0] !== "undefined" ) { 
+						$.when(processFloodData(key, a[0]));
+					};
+					// increment the tab-flood-counter and if this is the same
+					// as the number of tabs then stop the timers
+					tab_flood_counter++;
+					if ( tab_flood_counter == $(".nav-tabs a").length ) {
+						showFloodWarnings($("ul.nav-tabs li.active").text());
+					};
 				}
 			});
 		};
@@ -923,7 +950,7 @@ $(document).ready(function() {
 					mymap.invalidateSize();
 					
 					// now let's get the data for the other locations/tabs
-					var tab_counter = 1;
+					var tab_data_counter = 1;
 					$(".nav-tabs a").each( function(n) {
 						// skip the first one as we've already done it
 						if (n > 0) {
@@ -948,9 +975,10 @@ $(document).ready(function() {
 								// don't worry too much if we don't get this information
 								// just do the minimum
 								.fail( function() {
-									// increment the tab-counter and if this is 4 then stop the timers
-									tab_counter++;
-									if ( tab_counter == 4 ) {
+									// increment the tab_data_counter and if this is 
+									// the same as the number of tabs then stop the timers
+									tab_data_counter++;
+									if ( tab_data_counter == $(".nav-tabs a").length ) {
 										// stop the timers
 										clearTimeout(apology);
 										clearTimeout(dots);
@@ -968,11 +996,11 @@ $(document).ready(function() {
 										marker[key] = L.marker([details[key]['latitude'], details[key]['longitude']]).addTo(mymap).bindPopup("<b>"+key + details[key]["type"]+"</b><br>Current depth: "+details[key]["pairs"][details[key]["latest date"]]+details[key]["units"]);
 										// show the tab
 										$(".nav-tabs li").eq(n).show();
-										// increment the tab-counter and if this is the same
-										// as the total number of tabs then stop the timers
-										// as we have processed all the tabs
-										tab_counter++;
-										if ( tab_counter == $(".nav-tabs a").length ) {
+										// increment the tab_data_counter and if this is 
+										// the same as the total number of tabs then stop 
+										// the timers as we have processed all the tabs
+										tab_data_counter++;
+										if ( tab_data_counter == $(".nav-tabs a").length ) {
 											// stop the timers
 											clearTimeout(apology);
 											clearTimeout(dots);
