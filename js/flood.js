@@ -853,7 +853,7 @@ $(document).ready(function() {
 
 	// initialise an array to hold the markers on the map
 	var marker = [];
-	throw "test"
+
 	// loop through all the items in the object and get the flood warnings
 	// these are on google to avoid CORS
 	for (var k in details) {
