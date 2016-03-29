@@ -425,7 +425,7 @@ function nearest( noofdays, obj, dp ) {
 	}
 	previous = Math.round(parseInt(moment.unix(obj["latest date"]).startOf("day")-moment.unix(found).startOf("day"))/86400000);
 	if ( previous == 1 ) { previous = "yesterday" }
-	else if ( previous > 1 && previous < 7 ) { previous = moment().startOf("day").subtract(previous,"days").format("dddd"); }
+	else if ( previous > 1 && previous < 7 ) { previous = "last "+moment().startOf("day").subtract(previous,"days").format("dddd"); }
 	else if ( previous == 7 ) { previous = "a week ago" } 
 	else { previous = previous.toFixed(0)+" days ago" };
 	return [ mean(obj["daily values"][moment.unix(found).startOf('day').unix()]), found, previous ];
