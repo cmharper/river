@@ -470,7 +470,6 @@ function percentRank(arr, v) {
 function processFloodData(k, data) {
 	//try {
 		if ( typeof data["items"] !== "undefined" ) {
-			console.log(JSON.stringify(data));
 			data["items"] = data["items"].sort(function(a,b) {
 				// sort by the severity level of the alert
 				if (a.severityLevel > b.severityLevel) {
@@ -525,7 +524,6 @@ function processRiverData(k, data) {
 			multiplier = 100;
 			dp = 1;
 		};
-		
 		// loop through all the lines
 		for (var l = 0; l < lines.length; l++) {
 			// split the lines by comma as they are csv
@@ -537,7 +535,7 @@ function processRiverData(k, data) {
 			} else {
 				this_line[0] = parseInt(100*parseFloat(parseFloat(this_line[0])+parseFloat(first_line)));
 			}
-			this_line[1] = parseFloat(multiplier * this_line[1]);
+			this_line[1] = parseFloat(multiplier * this_line[1] / 1000);
 			
 			// check the types
 			if (isInt(this_line[0]) && (isFloat(this_line[1]) || isInt(this_line[1]))) {
