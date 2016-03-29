@@ -470,6 +470,7 @@ function percentRank(arr, v) {
 function processFloodData(k, data) {
 	//try {
 		if ( typeof data["items"] !== "undefined" ) {
+			console.log(k+" -> "+data["cached"]);
 			data["items"] = data["items"].sort(function(a,b) {
 				// sort by the severity level of the alert
 				if (a.severityLevel > b.severityLevel) {
@@ -880,8 +881,6 @@ $(document).ready(function() {
 	// these are on google to avoid CORS
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
-			// define a flood counter
-			var tab_flood_counter = 1;
 			// define the url
 			var myurl = "https://script.google.com/macros/s/AKfycbwOUxqNA-rvJ-qbh1wH-sVo7Y9HDQlEDsySXWAAAXozI5guZzI/exec";
 			//var myurl = "fail";
@@ -898,10 +897,9 @@ $(document).ready(function() {
 					message: "<br>Fetching flood warnings for " + k +"."
 			}), k)
 			.fail(function() {
-				// increment the tab-flood-counter and if this is the same
-				// as the number of tabs then stop the timers
-				tab_flood_counter++;
-				if ( tab_flood_counter == $(".nav-tabs a").length ) {
+				// show the error message
+				details[k]["warning"] = 100;
+				if ( k == $("ul.nav-tabs li.active").text() ) {
 					showFloodWarnings($("ul.nav-tabs li.active").text());
 				};
 			})
@@ -915,10 +913,7 @@ $(document).ready(function() {
 					if ( typeof a[0] !== "undefined" ) { 
 						$.when(processFloodData(key, a[0]));
 					};
-					// increment the tab-flood-counter and if this is the same
-					// as the number of tabs then stop the timers
-					tab_flood_counter++;
-					if ( tab_flood_counter == $(".nav-tabs a").length ) {
+					if ( key == $("ul.nav-tabs li.active").text() ) {
 						showFloodWarnings($("ul.nav-tabs li.active").text());
 					};
 				}
@@ -1011,11 +1006,13 @@ $(document).ready(function() {
 								// when we have data always do this
 								.always(function(a, key, n) {
 									//try {
-										// show a progress message
-										$( "#error-text span:last" ).append( "<br>Processing the data for "+key );
-										processRiverData(key, a[0][key]);
-										// add a marker to the map
-										marker[key] = L.marker([details[key]['latitude'], details[key]['longitude']]).addTo(mymap).bindPopup("<b>"+key + details[key]["type"]+"</b><br>Current depth: "+details[key]["pairs"][details[key]["latest date"]]+details[key]["units"]);
+										if ( typeof a[0] !== "undefined" ) { 
+											// show a progress message
+											$( "#error-text span:last" ).append( "<br>Processing the data for "+key );
+											processRiverData(key, a[0][key]);
+											// add a marker to the map
+											marker[key] = L.marker([details[key]['latitude'], details[key]['longitude']]).addTo(mymap).bindPopup("<b>"+key + details[key]["type"]+"</b><br>Current depth: "+details[key]["pairs"][details[key]["latest date"]]+details[key]["units"]);
+										};
 										// show the tab
 										$(".nav-tabs li").eq(n).show();
 										// increment the tab_data_counter and if this is 
