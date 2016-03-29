@@ -470,6 +470,24 @@ function percentRank(arr, v) {
 function processFloodData(k, data) {
 	//try {
 		if ( typeof data["items"] !== "undefined" ) {
+			console.log(JSON.stringify(data));
+			data["items"] = data["items"].sort(function(a,b) {
+				// sort by the severity level of the alert
+				if (a.severityLevel > b.severityLevel) {
+        return 1;
+				} else if (a.severityLevel < b.severityLevel) { 
+						return -1;
+				}
+
+				// sort by the time the message changed (descending)
+				if (a.timeMessageChanged > b.timeMessageChanged) { 
+						return -1;
+				} else if (a.timeMessageChanged < b.timeMessageChanged) {
+						return 1
+				} else { // nothing to split them
+						return 0;
+				}
+			});
 			if (data["items"].length > 0) {
 				for (i = 0; i < data["items"].length; i++) {
 					if (data["items"][i]["severityLevel"] < details[k]["warning"]) {
@@ -478,8 +496,14 @@ function processFloodData(k, data) {
 					var img = "";
 					if (data["items"][i]["severityLevel"] >= 1 && data["items"][i]["severityLevel"] <= 3) {
 						img = "<img class=\"pull-left\" src=\"images/flood/" + data["items"][i]["severityLevel"] + ".jpg\" title=\"" + data["items"][i]["severity"] + "\" />";
+						if ( data["items"][i]["severityLevel"] == 2 ) { layer_group = 1 }
+						else if ( data["items"][i]["severityLevel"] == 1 ) { layer_group = 0 }
+						else { layer_group = 2 }
 					}
-					details[k]["warning messages"].push("<p>" + img + "<strong>" + data["items"][i]["severity"] + ": " + data["items"][i]["description"] + "</strong><br><span class=\"text-muted\">Last updated: " + moment(data["items"][i]["timeMessageChanged"]).format("Do MMMM YYYY [at] HH:mm") + "</span><br>" + data["items"][i]["message"] + "</p>");
+					var msg = ""
+					msg += "<p>" + img + "<strong>" + data["items"][i]["severity"] + ": " + data["items"][i]["description"] + "&nbsp;<a href=\"http://apps.environment-agency.gov.uk/flood/34681.aspx?area="+data["items"][i]["floodAreaID"]+"\" target=\"_blank\" data-toggle=\"tooltip\" data-placement=\"below\" title=\"Map of the area effected\"><span class=\"glyphicon glyphicon-map-marker\"></span></a></strong><br><span class=\"text-muted\">Last updated: " + moment(data["items"][i]["timeMessageChanged"]).format("Do MMMM YYYY [at] HH:mm") + "</span>";
+					if ( typeof data["items"][i]["message"] !== "undefined" ) { msg += "<br>" + data["items"][i]["message"] + "</p>"; };
+					details[k]["warning messages"].push( msg );
 				}
 			}
 		}
