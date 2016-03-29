@@ -295,7 +295,7 @@ function create_page(k) {
 			var desc = "The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(yesterdays_value[0], todays_value, details[k]["units"], dp) + " "+yesterdays_value[2]+" and " + raised(last_weeks_value[0], todays_value, details[k]["units"], dp) + " "+last_weeks_value[2]+".";
 			// if this data is more than a day old
 			if ( parseInt(moment().unix())-parseInt(details[k]["latest date"]) > 86400 ) {
-				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ");
+				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ").replace(/\ yesterday\ /g," the previous day ");
 			}
 			$("#level-description").html(desc).show();
 	//} catch (e) { $("#para1").hide(); }
@@ -470,7 +470,6 @@ function percentRank(arr, v) {
 function processFloodData(k, data) {
 	//try {
 		if ( typeof data["items"] !== "undefined" ) {
-			console.log(k+" -> "+data["cached"]);
 			data["items"] = data["items"].sort(function(a,b) {
 				// sort by the severity level of the alert
 				if (a.severityLevel > b.severityLevel) {
