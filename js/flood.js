@@ -23,7 +23,7 @@ function countProperties(obj) {
 
 // the workhorse which adds the data to the page
 function create_page(k) {
-	//try {
+	try {
 		// define the number of decimal places accuracy
 		var dp = 3;
 		if (details[k]["units"] == "cm") {
@@ -134,7 +134,7 @@ function create_page(k) {
 		var current_percentile = (100 * percentRank(details[k]["readings"], parseFloat(todays_value))).toFixed(0);
 		// determine in english what the level is
 		var thelevelis = whatisthelevel(current_percentile);
-	//} catch (e) { showError() };
+	} catch (e) { showError() };
 	
 	// set the marker showing whether the level is rising or not
 	if (todays_value < yesterdays_value[0]) {
@@ -291,14 +291,14 @@ function create_page(k) {
 	catch (e) { $("#current-depth-most-common").closest("tr").hide(); }
 	
 	// assign the paragraph of text
-	//try {
+	try {
 			var desc = "The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(yesterdays_value[0], todays_value, details[k]["units"], dp) + " "+yesterdays_value[2]+" and " + raised(last_weeks_value[0], todays_value, details[k]["units"], dp) + " "+last_weeks_value[2]+".";
 			// if this data is more than a day old
 			if ( parseInt(moment().unix())-parseInt(details[k]["latest date"]) > 86400 ) {
 				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ").replace(/\ yesterday\ /g," the previous day ");
 			}
 			$("#level-description").html(desc).show();
-	//} catch (e) { $("#para1").hide(); }
+	} catch (e) { $("#para1").hide(); }
 
 	// do the what is the usual depth panel
 	$("#day-average-date").html(current.format("Do MMMM"));
@@ -468,7 +468,7 @@ function percentRank(arr, v) {
 
 // function that processes the flood warnings and prints them to screen
 function processFloodData(k, data) {
-	//try {
+	try {
 		if ( typeof data["items"] !== "undefined" ) {
 			data["items"] = data["items"].sort(function(a,b) {
 				// sort by the severity level of the alert
@@ -506,13 +506,13 @@ function processFloodData(k, data) {
 				}
 			}
 		}
-	//} catch (e) { showError() };
+	} catch (e) { showError() };
 }
 
 // a function that converts the CSV data into an object we can
 // use easier
 function processRiverData(k, data) {
-	//try {
+	try {
 		// set the multiplier, precision and split the data by new lines
 		var multiplier = 1,
 				dp = 3,
@@ -583,7 +583,7 @@ function processRiverData(k, data) {
 		// make sure we only have different dates in the arrays
 		details[k]["maximum dates"] = deduplicate(details[k]["maximum dates"]);
 		details[k]["minimum dates"] = deduplicate(details[k]["minimum dates"]);
-	//} catch (e) { showError() };
+	} catch (e) { showError() };
 }
 
 // function used to return a phrase regarding rise/fall/same
@@ -944,7 +944,7 @@ $(document).ready(function() {
 			})
 			// otherwise always do this
 			.always(function(a, key) {
-				//try {
+				try {
 					// show a progress message and process the data
 					$( "#error-text span:last" ).append( "<br>Processing the data for "+key );
 					processRiverData(key, a[0][key]);
@@ -1004,7 +1004,7 @@ $(document).ready(function() {
 								})
 								// when we have data always do this
 								.always(function(a, key, n) {
-									//try {
+									try {
 										if ( typeof a[0] !== "undefined" ) { 
 											// show a progress message
 											$( "#error-text span:last" ).append( "<br>Processing the data for "+key );
@@ -1025,12 +1025,12 @@ $(document).ready(function() {
 											// open the pop-up on the map
 											marker[$("ul.nav-tabs li.active").text()].openPopup();
 										};
-									//} catch (e) { showError() };
+									} catch (e) { showError() };
 								});
 							}
 						}
 					});
-				//} catch (e) { showError() };
+				} catch (e) { showError() };
 			});
 		};
 	}
