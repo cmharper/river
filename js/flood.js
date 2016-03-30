@@ -82,7 +82,7 @@ function create_page(k) {
 		last_weeks_value[0] = last_weeks_value[0].toFixed(dp);
 
 		// set the page title
-		document.title = "Water level data for " + k;
+		document.title = "Water levels for " + k;
 		
 		// define stuff to use in calculating the values on a certain day (eg 25 Dec or 07 Sep)
 		var day_value = [];
