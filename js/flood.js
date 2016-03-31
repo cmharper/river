@@ -620,7 +620,6 @@ function showFloodWarnings(k) {
 		$("#marker-warning-text").html("The warning is no longer in force").removeClass("warning danger default").addClass("info");
 		$("#marker-warning-icon").removeClass("glyphicon-alert").addClass("glyphicon-thumbs-up");
 		$("#alert-box-message-title").html("The warning is no longer in force");
-		//$("#alert-box-message-text").append("The warning is no longer in force.");
 		$("#alert-box-message").removeClass("panel-warning-bold panel-danger-bold panel-default").addClass("panel-info").show();
 	} else if (details[k]["warning"] == 3) {
 		$("#marker-warning").removeClass("info danger default").addClass("warning");
