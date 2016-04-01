@@ -252,7 +252,10 @@ function create_page(k) {
 				zIndex: 10,
 				threshold: null,
 				tooltip: {
-					valueDecimals: 2
+					headerFormat: "<span style=\"color:{point.color}\">\u25CF</span> {point.x:%A, %B %e %Y at %H:%M}<br>",
+					pointFormat: "Recorded depth: {point.y}",
+					valueDecimals: 1,
+					valueSuffix: details[k]["units"]
 				},
 				color: 'rgba(50, 118, 177,1)',
 				fillColor: 'rgba(40, 94, 142,0.5)'
@@ -305,7 +308,7 @@ function create_page(k) {
 				title: { text: null },
 				tooltip: {
 					formatter: function () {
-						return 'A measurement of ' + this.x + details[k]["units"] + " ± 0.5" + details[k]["units"] + ' was recorded ' + Number(this.y).toLocaleString('en') + ' times.';
+						return 'A measurement of ' + this.x + details[k]["units"] + " ± 0.5" + details[k]["units"] + ' has been recorded ' + Number(this.y).toLocaleString('en') + ' times.';
 					}
         },
 				credits: {
