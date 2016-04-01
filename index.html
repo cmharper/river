@@ -176,11 +176,24 @@
 					<div class="col-sm-12">
 						<div class="panel panel-primary">
 							<div class="panel-heading">
-								<h3 class="panel-title"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span>&nbsp;&nbsp;A chart showing the depth of water in <span class="river-location"> over time</span></h3>
+								<h3 class="panel-title"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span>&nbsp;&nbsp;A chart showing the depth of water in <span class="river-location"></span> over time</h3>
 							</div>
 							<div class="panel-body">
-								<div id="graph-div"></div>
-								<p>Use your mouse to alter the date range on the thin lower graph showing all our data or pick a pre-defined zoom range at the top of the chart.</p>
+								<div id="graph-time"></div>
+								<p>Tip: alter the date range on the thin lower graph showing all of our data or pick a pre-defined zoom range at the top of the chart.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span>&nbsp;&nbsp;A chart showing the most common depth of <span class="river-location"></span></h3>
+							</div>
+							<div class="panel-body">
+								<div id="graph-distribution"></div>
+								<p>We have recorded <span class="number-of-recordings"></span> measurements of <span class="river-location"></span> since <span class="first-recording-date"></span> and have used them to compile the chart above.  The tallest peak indicates the most common depth of <span class="river-location"></span> and smaller peaks indicate other regular depths during periods of heavy rainfall or flooding (particularly when the corresponding depth differs greatly from the most common depth).</p>
 							</div>
 						</div>
 					</div>
@@ -201,7 +214,6 @@
 				</div>
 			</div>
 		</div>
-		<div id="graph-distribution"></div>
 		<!-- load all the javascript needed -->
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js"></script>
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>

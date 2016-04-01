@@ -150,10 +150,10 @@ function create_page(k) {
 		$("#marker-rising-text").html("Steady").removeClass("danger warning").addClass("default");
 		$("#marker-rising-icon").removeClass("glyphicon-arrow-up glyphicon-arrow-down").addClass("glyphicon-resize-horizontal");
 	}
-
-	// draw the graph
+	
+	// draw the time graph
 	try {
-		$('#graph-div').highcharts('StockChart', {
+		$('#graph-time').highcharts('StockChart', {
 			rangeSelector: {
 				selected: 2,
 				buttons: [{
@@ -187,6 +187,9 @@ function create_page(k) {
 			},
 			xAxis: {
 				ordinal: false
+			},
+			credits: {
+				enabled: false
 			},
 			yAxis: {
 				title: {
@@ -255,13 +258,73 @@ function create_page(k) {
 				fillColor: 'rgba(40, 94, 142,0.5)'
 			}]
 		});
-		// remove the link from the graph
-		$("svg text").each(function() {
-			if ($(this).text() == "Highcharts.com") {
-				$(this).text("")
+	} catch (e) { $('#graph-time').html("<p>Sorry but we could not draw a chart for the data we had.</p>") };
+	
+	
+	// lets now create the data for the distribution graph
+	try {
+		var dist_obj = {}
+		// count how many times each reading exists
+		for ( var i=0;i<details[k]["readings"].length;i++ ) {
+			if ( dist_obj.hasOwnProperty(Math.round(details[k]["readings"][i])) ) {
+				dist_obj[Math.round(details[k]["readings"][i])] += 1;
+			} else {
+				dist_obj[Math.round(details[k]["readings"][i])] = 1;
+			}
+		}
+		// put the data in arrays for the x and y axes
+		var dist_x = [], dist_y = [];
+		for ( var i=parseInt(details[k]["minimum"]);i<=details[k]["maximum"];i++ ) {
+			dist_x.push( i );
+			if ( dist_obj.hasOwnProperty(i) ) {
+				dist_y.push( dist_obj[i] );
+			} else {
+				dist_y.push( 0 );
 			};
+		}
+		dist_obj = null;
+		// finally lets draw the chart
+		$('#graph-distribution').highcharts({
+				chart: {
+					type: 'areaspline'
+				},
+				legend: {
+					enabled: false
+				},
+				xAxis: {
+					categories: dist_x,
+					title: {
+						text: 'Depth measurement in ' + details[k]["units"]
+					}
+				},
+				yAxis: {
+					title: {
+						text: "Number of times the measurement has been made"
+					}
+				},
+				title: { text: null },
+				tooltip: {
+					formatter: function () {
+						return 'A measurement of ' + this.x + details[k]["units"] + " ± 0.5" + details[k]["units"] + ' was recorded ' + Number(this.y).toLocaleString('en') + ' times.';
+					}
+        },
+				credits: {
+					enabled: false
+				},
+				plotOptions: {
+					areaspline: {
+						fillOpacity: 0.5
+					}
+				},
+				series: [{
+					data: dist_y
+				}]
 		});
-	} catch (e) { $('#graph-div').html("<p>Sorry but we could not draw a chart for the data we had.</p>") };
+		// define the first recording date and number of readings
+		$(".number-of-recordings").html( Number(details[k]["readings"].length).toLocaleString('en') );
+		var first_recording_date = moment.unix(details[k]["earliest date"]).format("Do MMMM YYYY");
+		$(".first-recording-date").html( first_recording_date );
+	} catch (e) { $('#graph-distribution').html("<p>Sorry but we could not draw a chart for the data we had.</p>") };
 	
 	// set where the data is for, the current level and when it was taken
 	$(".river-location").html(k + details[k]["type"]);
@@ -336,7 +399,7 @@ function create_page(k) {
 	if (qualify.hasOwnProperty("maximum")) { message += qualify["maximum"]; };
 	if (qualify.hasOwnProperty("minimum") || qualify.hasOwnProperty("maximum")) { message += " for "+k + details[k]["type"]+"." };
 	$("#environment-agency-message").html("<span class=\"text-muted\">"+message+"</span>");
-	try { $("#start-date").html("on "+moment.unix(details[k]["earliest date"]).format("Do MMMM YYYY")); }
+	try { $("#start-date").html("on "+first_recording_date); }
 	catch (e) { }; // do nothing
 }
 

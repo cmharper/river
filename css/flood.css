@@ -176,7 +176,7 @@ body {
 .scroll-top-wrapper i.fa {
 	line-height: inherit;
 }
-#graph-div {
+#graph-time, #graph-distribution {
 	width: 860px;
 }
 h1 {
