@@ -317,7 +317,9 @@ function create_page(k) {
 					}
 				},
 				series: [{
-					data: dist_y
+					data: dist_y,
+					color: 'rgba(50, 118, 177,1)',
+					fillColor: 'rgba(40, 94, 142,0.5)'
 				}]
 		});
 		// define the first recording date and number of readings
