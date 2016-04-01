@@ -252,8 +252,8 @@ function create_page(k) {
 				zIndex: 10,
 				threshold: null,
 				tooltip: {
-					headerFormat: "<span style=\"color:{point.color}\">\u25CF</span> {point.x:%A, %B %e %Y at %H:%M}<br>",
-					pointFormat: "Recorded depth: {point.y}",
+					headerFormat: "<span style=\"color:{point.color}\">\u25CF</span> On {point.x:%A, %B %e %Y at %H:%M}<br>",
+					pointFormat: "the recorded depth was {point.y}.",
 					valueDecimals: 1,
 					valueSuffix: details[k]["units"]
 				},
