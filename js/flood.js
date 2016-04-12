@@ -105,11 +105,11 @@ function create_page(k) {
 				day_value = day_value.concat(details[k]["daily values"][e]);
 				var maxv = Math.max.apply(null, details[k]["daily values"][e]).toFixed(dp);
 				var minv = Math.min.apply(null, details[k]["daily values"][e]).toFixed(dp);
-				if (day_value_range["max"] == null || (maxv >= day_value_range["max"] && e >= day_value_range["max_date"])) {
+				if (day_value_range["max"] == null || (parseFloat(maxv) >= parseFloat(day_value_range["max"]) && parseInt(e) >= parseInt(day_value_range["max_date"]))) {
 					day_value_range["max"] = maxv;
 					day_value_range["max_date"] = e;
 				}
-				if (day_value_range["min"] == null || (minv <= day_value_range["min"] && e >= day_value_range["min_date"])) {
+				if (day_value_range["min"] == null || (parseFloat(minv) <= parseFloat(day_value_range["min"]) && parseInt(e) >= parseInt(day_value_range["min_date"]))) {
 					day_value_range["min"] = minv;
 					day_value_range["min_date"] = e;
 				}
