@@ -969,13 +969,14 @@ $(document).ready(function() {
 					},
 					message: "<br>Fetching flood warnings for " + k +"."
 			})
-			.fail(function() {
-				//console.log("failed to get flood warning for "+k);
+			.fail(function(err) {
+				console.log("failed to get flood warning for "+k);
+				console.log(err);
 				// show the error message
-				//details[this.location]["warning"] = 100;
-				//if ( this.location == $("ul.nav-tabs li.active").text() ) {
-				//	showFloodWarnings($("ul.nav-tabs li.active").text());
-				//};
+				details[this.location]["warning"] = 100;
+				if ( this.location == $("ul.nav-tabs li.active").text() ) {
+					showFloodWarnings($("ul.nav-tabs li.active").text());
+				};
 			})
 			// always do this when we have downloaded the data
 			.always(function(a, success) {
