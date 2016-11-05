@@ -970,8 +970,6 @@ $(document).ready(function() {
 					message: "<br>Fetching flood warnings for " + k +"."
 			})
 			.fail(function(err) {
-				console.log("failed to get flood warning for "+k);
-				console.log(err);
 				// show the error message
 				details[this.location]["warning"] = 100;
 				if ( this.location == $("ul.nav-tabs li.active").text() ) {
