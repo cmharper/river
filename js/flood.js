@@ -720,7 +720,7 @@ function showFloodWarnings(k) {
 		$("#marker-warning-text").html("Error collecting flood warning data").removeClass("info danger default").addClass("warning");
 		$("#marker-warning-icon").removeClass("glyphicon-thumbs-up").addClass("glyphicon-alert");
 		$("#alert-box-message-title").html("Error collecting data the flood warning data");
-		$("#alert-box-message-text").append("<p>There was an error collecting the flood warning data.  This means our data may be out of date or incorrect.  Please refresh this page or try again later if the problem persists.</p><p>Click <a href=\"https://flood-warning-information.service.gov.uk/\" title=\"Environment Agency Flood Warnings\">here</a> to view the latest flood warnings on the Environment Agency website.</p>");
+		$("#alert-box-message-text").append("<p>There was an error collecting the flood warning data.  This means our data may be out of date or incorrect.  Please refresh this page(after disabling any adblockers you have in your browser) or try again later if the problem persists.</p><p>Click <a href=\"https://flood-warning-information.service.gov.uk/\" title=\"Environment Agency Flood Warnings\">here</a> to view the latest flood warnings on the Environment Agency website.</p>");
 		$("#alert-box-message").removeClass("panel-info panel-danger-bold panel-default").addClass("panel-warning-bold").show();
 	} else {
 		$("#marker-warning").removeClass("warning danger info").addClass("default");
@@ -978,7 +978,6 @@ $(document).ready(function() {
 			})
 			// always do this when we have downloaded the data
 			.always(function(a, success) {
-				console.log(JSON.stringify(a));
 				// don't fail on error just show the user a warning
 				if (success == "error") {
 					details[this.location]["warning"] = 100;
