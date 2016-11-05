@@ -1,5 +1,43 @@
 // -------- START OF DECLARATION OF FUNCTIONS -----------------------//
 
+function formatDateGroup(s,p) {
+	// check if the range is only one day
+	if ( s == p ) {
+		return moment.unix(s).format("Do MMMM YYYY");
+	}
+	else {
+		return moment.unix(s).format("Do") + "-" + moment.unix(p).format("Do MMMM YYYY");
+	};
+}
+
+function getDatesInSortedOrder(dates){
+	var grouped_dates = [], start_group = null, previous = null;
+	for ( var d=0;d<dates.length;d++ ) {
+		//console.log(dates[d]+" "+previous+" "+moment.unix(dates[d]).diff(moment.unix(previous), "days"));
+		var this_date = moment.unix(dates[d]), last_date = moment.unix(previous);
+		if ( start_group == null ) {
+			start_group = dates[d];
+		}
+		// if the difference in dates is greater than one day or it
+		// is a new month then store the date and start looking 
+		// for a new group
+		else if ( this_date.format("MMM")!= last_date.format("MMM") || this_date.diff(last_date, "days") > 1 ) {
+			grouped_dates.push( formatDateGroup( start_group, previous ));
+			start_group = dates[d];
+		};
+		// remember the date and keep looking
+		previous = dates[d];
+	}
+	grouped_dates.push( formatDateGroup( start_group, previous ));
+	return grouped_dates ;
+}
+
+
+
+
+
+
+
 // attach the back to top button to the scrolling of the window
 $(function() {
 	$(document).on('scroll', function() {
@@ -12,136 +50,113 @@ $(function() {
 	$('.scroll-top-wrapper').on('click', scrollToTop);
 });
 
-// count how many items are in the object
-function countProperties(obj) {
-	var count = 0;
-	for (var prop in obj) {
-		if (obj.hasOwnProperty(prop)) { count++ };
-	}
-	return count;
+// return a phrase indicating the age
+function ago(num) {
+	if ( num == 1 ) { return "yesterday" }
+	else if ( num > 1 && num < 7 ) { return "last "+moment().startOf("day").subtract(num,"days").format("dddd"); }
+	else if ( num == 7 ) { return "a week ago" } 
+	else { return num.toFixed(0)+" days ago" };
 }
+
+// return the maximum number in an array and the unique elements
+function arrayMax(arr,st) {
+	var len = arr.length, max = -Infinity, maxdates = [];
+	while (len--) {
+		if ( arr[len] != "" ) {
+			var val = parseFloat(arr[len]);
+			if ( val == max ) {
+				maxdates.push( 86400*parseInt(((900*len)+parseInt(st))/86400) );
+			}
+			else if ( val > max ) {
+				maxdates = [];
+				max = val;
+				maxdates.push( 86400*parseInt(((900*len)+parseInt(st))/86400) );
+			}
+		}
+	}
+	return [ max, deduplicate(maxdates) ];
+};
+
+// return the minimum number in an array and the unique elements
+function arrayMin(arr,st) {
+	var len = arr.length, min = Infinity, mindates = [];
+	while (len--) {
+		if ( arr[len] != "" ) {
+			var val = parseFloat(arr[len]);
+			if ( val == min ) {
+				mindates.push( 86400*parseInt(((900*len)+parseInt(st))/86400) );
+			}
+			else if ( val < min ) {
+				mindates = [];
+				min = val;
+				mindates.push( 86400*parseInt(((900*len)+parseInt(st))/86400) );
+			}
+		}
+	}
+	return [ min, deduplicate(mindates.sort(function(a, b) { return a - b })) ];
+};
+
+// return a string with the elements separated by commas and a 
+// final and.  eg apple, banana and pear for [ apple, banana, pear ]
+function commaAnd(arr) {
+	if ( arr.length > 1 ) {
+		return arr.slice(0, arr.length - 1).join(', ') + " and " + arr.slice(-1);
+	}
+	else {
+		return arr[0];
+	};
+};
 
 // the workhorse which adds the data to the page
 function create_page(k) {
 	try {
+		var tt = new Date(),timecounter=1;
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date(); tt=new Date();
 		// define the number of decimal places accuracy
 		var dp = 3;
 		if (details[k]["units"] == "cm") {
 			dp = 1;
 		};
-		
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// get the current date and time
 		var current = moment();
-		
-		// check against environment agency max/min and process the data if necessary
-		if (details[k]["maximum"] >= details[k]["ea maximum"]) {
-			details[k]["ea max dates"] = details[k]["maximum dates"];
-		}
-		if (details[k]["minimum"] <= details[k]["ea minimum"]) {
-			details[k]["ea min dates"] = details[k]["minimum dates"];
-		}
-
-		// sort the dates numerically (low to high)
-		details[k]["maximum dates"] = details[k]["maximum dates"].sort(function(a, b) { return a - b });
-		details[k]["minimum dates"] = details[k]["minimum dates"].sort(function(a, b) { return a - b });
-		details[k]["ea max dates"] = details[k]["ea max dates"].sort(function(a, b) { return a - b });
-		details[k]["ea min dates"] = details[k]["ea min dates"].sort(function(a, b) { return a - b });
-		
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// get the date data in english
-		var group_max_dates = languageDates(details[k]["maximum dates"]);
-		var group_min_dates = languageDates(details[k]["minimum dates"]);
-		var group_ea_min_dates = languageDates(details[k]["ea max dates"]);
-		var group_ea_max_dates = languageDates(details[k]["ea min dates"]);
-
-		// check if we need to qualify our results (because the environment
-		// agency has better data than us
-		var qualify = {};
-		if (details[k]["ea minimum"] !== null && details[k]["minimum"] != details[k]["ea minimum"]) {
-			if (group_ea_min_dates.length > 1) {
-				qualify["minimum"] = "a minimum depth of " + details[k]["ea minimum"].toFixed(dp) + details[k]["units"] + " on " + group_ea_min_dates.slice(0, group_ea_min_dates.length - 1).join(', ') + " and " + group_ea_min_dates.slice(-1);
-			} else {
-				qualify["minimum"] = "a minimum depth of " + details[k]["ea minimum"].toFixed(dp) + details[k]["units"] + " on " + group_ea_min_dates[0];
-			}
-		}
-		if (details[k]["ea maximum"] !== null && details[k]["maximum"] != details[k]["ea maximum"]) {
-			if (group_ea_max_dates.length > 1) {
-				qualify["maximum"] = "a maximum depth of " + details[k]["ea maximum"].toFixed(dp) + details[k]["units"] + " on " + group_ea_max_dates.slice(0, group_ea_max_dates.length - 1).join(', ') + " and " + group_ea_max_dates.slice(-1);
-			} else {
-				qualify["maximum"] = "a maximum depth of " + details[k]["ea maximum"].toFixed(dp) + details[k]["units"] + " on " + group_ea_max_dates[0];
-			}
-		}
-		group_ea_max_dates = null;
-		group_ea_max_dates = null;
-
+		var group_max_dates = getDatesInSortedOrder(details[k]["maximum dates"]);
+		var group_min_dates = getDatesInSortedOrder(details[k]["minimum dates"]);
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// today's value
-		var todays_value = details[k]["pairs"][details[k]["latest date"]];
-		// yesterday's value
-		var yesterdays_value =  nearest( 1, details[k] );
-		yesterdays_value[0] = yesterdays_value[0].toFixed(dp);
-		var last_weeks_value = nearest( 7, details[k] )
-		last_weeks_value[0] = last_weeks_value[0].toFixed(dp);
-
+		var todays_value = details[k]["daily values"]["this day"];
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// set the page title
 		document.title = "Water levels for " + k;
 		
-		// define stuff to use in calculating the values on a certain day (eg 25 Dec or 07 Sep)
-		var day_value = [];
-		var day_value_range = {
-			"max": null,
-			"max_date": "0",
-			"min": null,
-			"min_date": "0"
-		};
-		// find out the values on a certain day (eg 25 Dec) and loop
-		// through every year from the earliest date year
-		var d = moment().startOf('day');
-		for (y = parseInt(moment.unix(details[k]["earliest date"]).format("YYYY")); y <= current.year(); y++) {
-			// change the year
-			d.year(y);
-			// get the unix epoch seconds for this date
-			var e = d.unix();
-			if (details[k]["daily values"].hasOwnProperty(e)) {
-				// get all the data, find the max/min and when it occurred
-				day_value = day_value.concat(details[k]["daily values"][e]);
-				var maxv = Math.max.apply(null, details[k]["daily values"][e]).toFixed(dp);
-				var minv = Math.min.apply(null, details[k]["daily values"][e]).toFixed(dp);
-				if (day_value_range["max"] == null || (parseFloat(maxv) >= parseFloat(day_value_range["max"]) && parseInt(e) >= parseInt(day_value_range["max_date"]))) {
-					day_value_range["max"] = maxv;
-					day_value_range["max_date"] = e;
-				}
-				if (day_value_range["min"] == null || (parseFloat(minv) <= parseFloat(day_value_range["min"]) && parseInt(e) >= parseInt(day_value_range["min_date"]))) {
-					day_value_range["min"] = minv;
-					day_value_range["min_date"] = e;
-				}
-			};
-		}
-
-		// sort the readings numerically
-		details[k]["readings"] = details[k]["readings"].sort(function(a, b) { return a - b });
-
+		// clone the readings array and sort numerically and remove null readings
+		//var stats = details[k]["readings"].slice(0).filter(function(el) { return !isNaN(parseFloat(el)) && isFinite(el); }).sort(function(a, b) { return a - b });
+		console.log(k+" assign stats, "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// determine the levels for the 5% and 95% percentiles
-		var lower_percentile = parseFloat(percentile(details[k]["readings"], 0.05).toFixed(dp)),
-				higher_percentile = parseFloat(percentile(details[k]["readings"], 0.95).toFixed(dp));
-
+		//var lower_percentile = parseFloat(percentile(stats, 0.05).toFixed(dp)),
+		//		higher_percentile = parseFloat(percentile(stats, 0.95).toFixed(dp));
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// format the max and min to the required precision
 		details[k]["maximum"] = parseFloat(details[k]["maximum"]).toFixed(dp);
 		details[k]["minimum"] = parseFloat(details[k]["minimum"]).toFixed(dp);
-
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// determine whether the current level is within or outside the range
-		var compared_level = (todays_value >= lower_percentile && todays_value <= higher_percentile) ? "within" : "outside";
-		
+		var compared_level = (todays_value >= details[k]["lower percentile"] && todays_value <= details[k]["higher percentile"]) ? "within" : "outside";
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// get the current percentile for the current level
-		var current_percentile = (100 * percentRank(details[k]["readings"], parseFloat(todays_value))).toFixed(0);
+		//var current_percentile = (100 * percentRank(stats, parseFloat(todays_value))).toFixed(0);
 		// determine in english what the level is
-		var thelevelis = whatisthelevel(current_percentile);
+		var thelevelis = whatisthelevel(details[k]["current percentile"]);
 	} catch (e) { showError() };
-	
+		console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// set the marker showing whether the level is rising or not
-	if (todays_value < yesterdays_value[0]) {
+	if (todays_value < details[k]["daily values"]["yesterday average"]) {
 		$("#marker-rising").removeClass("danger default").addClass("warning");
 		$("#marker-rising-text").html("Falling").removeClass("danger default").addClass("warning");
 		$("#marker-rising-icon").removeClass("glyphicon-resize-horizontal glyphicon-arrow-up").addClass("glyphicon-arrow-down");
-	} else if (todays_value > yesterdays_value[0]) {
+	} else if (todays_value > details[k]["daily values"]["yesterday average"]) {
 		$("#marker-rising").removeClass("warning default").addClass("danger");
 		$("#marker-rising-text").html("Rising").removeClass("warning default").addClass("danger");
 		$("#marker-rising-icon").removeClass("glyphicon-resize-horizontal glyphicon-arrow-down").addClass("glyphicon-arrow-up");
@@ -150,10 +165,13 @@ function create_page(k) {
 		$("#marker-rising-text").html("Steady").removeClass("danger warning").addClass("default");
 		$("#marker-rising-icon").removeClass("glyphicon-arrow-up glyphicon-arrow-down").addClass("glyphicon-resize-horizontal");
 	}
-	
+	console.log(k+" graph1, "+timecounter+": "+(new Date() - tt )); timecounter++; tt = new Date();
 	// draw the time graph
 	try {
 		$('#graph-time').highcharts('StockChart', {
+			chart: {
+					zoomType: 'x'
+			},
 			rangeSelector: {
 				selected: 2,
 				buttons: [{
@@ -195,8 +213,8 @@ function create_page(k) {
 				title: {
 					text: 'Depth in ' + details[k]["units"]
 				},
-				min: details[k]["minimum"],
-				max: details[k]["maximum"],
+				min: 0, //details[k]["minimum"],
+				//max: details[k]["maximum"],
 				opposite: false,
 				plotLines: [{
 					value: details[k]["minimum"],
@@ -223,19 +241,19 @@ function create_page(k) {
 						}
 					}
 				}, {
-					value: lower_percentile,
+					value: details[k]["lower percentile"],
 					color: 'rgba(204, 204, 204, 1)',
 					dashStyle: 'shortdash',
 					width: 2
 				}, {
-					value: higher_percentile,
+					value: details[k]["higher percentile"],
 					color: 'rgba(204, 204, 204, 1)',
 					dashStyle: 'shortdash',
 					width: 2
 				}],
 				plotBands: [{
-					from: lower_percentile,
-					to: higher_percentile,
+					from: details[k]["lower percentile"],
+					to: details[k]["higher percentile"],
 					color: 'rgba(221, 221, 221, 0.5)', //'rgba(153, 186, 221, 0.5)',
 					label: {
 						text: 'Usual range of ' + k,
@@ -247,7 +265,7 @@ function create_page(k) {
 			},
 			series: [{
 				name: 'Recorded depth',
-				data: get_graph_data(k),
+				data: details[k]["mode" ]["graphone"],
 				type: 'area',
 				zIndex: 10,
 				threshold: null,
@@ -262,40 +280,21 @@ function create_page(k) {
 			}]
 		});
 	} catch (e) { $('#graph-time').html("<p>Sorry but we could not draw a chart for the data we had.</p>") };
-	
-	
+	console.log(k+" completed graph1, "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// lets now create the data for the distribution graph
 	try {
-		var dist_obj = {}
-		// count how many times each reading exists
-		for ( var i=0;i<details[k]["readings"].length;i++ ) {
-			if ( dist_obj.hasOwnProperty(Math.round(details[k]["readings"][i])) ) {
-				dist_obj[Math.round(details[k]["readings"][i])] += 1;
-			} else {
-				dist_obj[Math.round(details[k]["readings"][i])] = 1;
-			}
-		}
-		// put the data in arrays for the x and y axes
-		var dist_x = [], dist_y = [];
-		for ( var i=parseInt(details[k]["minimum"]);i<=details[k]["maximum"];i++ ) {
-			dist_x.push( i );
-			if ( dist_obj.hasOwnProperty(i) ) {
-				dist_y.push( dist_obj[i] );
-			} else {
-				dist_y.push( 0 );
-			};
-		}
-		dist_obj = null;
+		console.log(k+" graph2, "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// finally lets draw the chart
 		$('#graph-distribution').highcharts({
 				chart: {
-					type: 'areaspline'
+					type: 'areaspline',
+					zoomType: 'x'
 				},
 				legend: {
 					enabled: false
 				},
 				xAxis: {
-					categories: dist_x,
+					//categories: details[k]["mode"].x,
 					title: {
 						text: 'Depth measurement in ' + details[k]["units"]
 					}
@@ -308,7 +307,7 @@ function create_page(k) {
 				title: { text: null },
 				tooltip: {
 					formatter: function () {
-						return 'A measurement of ' + this.x + details[k]["units"] + " ± 0.5" + details[k]["units"] + ' has been recorded ' + Number(this.y).toLocaleString('en') + ' times.';
+						return 'A measurement of ' + this.x + details[k]["units"] + ' has been recorded ' + Number(this.y).toLocaleString('en') + ' times.';
 					}
         },
 				credits: {
@@ -320,7 +319,7 @@ function create_page(k) {
 					}
 				},
 				series: [{
-					data: dist_y,
+					data: details[k]["mode"]["graphtwo"],
 					color: 'rgba(50, 118, 177,1)',
 					fillColor: 'rgba(40, 94, 142,0.5)'
 				}]
@@ -330,82 +329,75 @@ function create_page(k) {
 		var first_recording_date = moment.unix(details[k]["earliest date"]).format("Do MMMM YYYY");
 		$(".first-recording-date").html( first_recording_date );
 	} catch (e) { $('#graph-distribution').html("<p>Sorry but we could not draw a chart for the data we had.</p>") };
-	
+	console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// set where the data is for, the current level and when it was taken
 	$(".river-location").html(k + details[k]["type"]);
 	$(".current-depth").html(todays_value + details[k]["units"]);
 	try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[k]["latest date"])) + " ("+moment.unix(details[k]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
 	catch (e) { $("#last-updated").hide(); }
-
+	console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// assign the marker for the level and how high it is
 	// the blue line in the icon is the percentile
 	$("#marker-level").css({
 		"background": "#FFF",
-		"background": "-moz-linear-gradient(090deg, rgba(50,118,177,1) " + current_percentile + "%, rgba(255,255,255,1) " + current_percentile + "%)",
-		"background": "-webkit-gradient(linear, left top, left bottom, color-stop(" + current_percentile + "%, rgba(255,255,255,1)), color-stop(" + current_percentile + "%, rgba(50,118,177,1)))",
-		"background": "-webkit-linear-gradient(090deg, rgba(50,118,177,1) " + current_percentile + "%, rgba(255,255,255,1) " + current_percentile + "%)",
-		"background": "-o-linear-gradient(090deg, rgba(50,118,177,1) " + current_percentile + "%, rgba(255,255,255,1) " + current_percentile + "%)",
-		"background": "-ms-linear-gradient(090deg, rgba(50,118,177,1) " + current_percentile + "%, rgba(255,255,255,1) " + current_percentile + "%)",
-		"background": "linear-gradient(0deg, rgba(50,118,177,1) " + current_percentile + "%, rgba(255,255,255,1) " + current_percentile + "%)",
+		"background": "-moz-linear-gradient(090deg, rgba(50,118,177,1) " + details[k]["current percentile"] + "%, rgba(255,255,255,1) " + details[k]["current percentile"] + "%)",
+		"background": "-webkit-gradient(linear, left top, left bottom, color-stop(" + details[k]["current percentile"] + "%, rgba(255,255,255,1)), color-stop(" + details[k]["current percentile"] + "%, rgba(50,118,177,1)))",
+		"background": "-webkit-linear-gradient(090deg, rgba(50,118,177,1) " + details[k]["current percentile"] + "%, rgba(255,255,255,1) " + details[k]["current percentile"] + "%)",
+		"background": "-o-linear-gradient(090deg, rgba(50,118,177,1) " + details[k]["current percentile"] + "%, rgba(255,255,255,1) " + details[k]["current percentile"] + "%)",
+		"background": "-ms-linear-gradient(090deg, rgba(50,118,177,1) " + details[k]["current percentile"] + "%, rgba(255,255,255,1) " + details[k]["current percentile"] + "%)",
+		"background": "linear-gradient(0deg, rgba(50,118,177,1) " + details[k]["current percentile"] + "%, rgba(255,255,255,1) " + details[k]["current percentile"] + "%)",
 		"filter": "progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#3276B1',GradientType=0 )"
 	});
 	$("#marker-level-text").html(thelevelis[0]);
-	
+	console.log(k+" current percentile,"+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// do the facts about panel
-	$("#current-depth-percentile-rank").html(current_percentile);
-	$("#current-depth-minimum").html(lower_percentile + details[k]["units"]);
-	$("#current-depth-maximum").html(higher_percentile + details[k]["units"]);
-	try { $("#current-depth-most-common").html(parseFloat(mode(details[k]["readings"])).toFixed(dp) + details[k]["units"]).show(); }
-	catch (e) { $("#current-depth-most-common").closest("tr").hide(); }
+	$("#current-depth-percentile-rank").html(details[k]["current percentile"]);
+	console.log(k+" lower percentile,"+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+	$("#current-depth-minimum").html(details[k]["lower percentile"] + details[k]["units"]);
+	console.log(k+" higher percentile,"+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+	$("#current-depth-maximum").html(details[k]["higher percentile"] + details[k]["units"]);
+	console.log(k+" mode,"+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+	$("#current-depth-most-common").html(parseFloat(details[k]["mode"].mode).toFixed(dp) + details[k]["units"]);
+	$("#current-depth-most-common-recording").html(parseFloat(details[k]["mode"].mode).toFixed(dp) + details[k]["units"]);
+	$("#current-depth-most-common-occurrance").html(Number(parseFloat(details[k]["mode"].greatestFreq).toFixed(0)).toLocaleString('en'));
 	
+	console.log(k+" para,"+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// assign the paragraph of text
 	try {
-			var desc = "The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(yesterdays_value[0], todays_value, details[k]["units"], dp) + " "+yesterdays_value[2]+" and " + raised(last_weeks_value[0], todays_value, details[k]["units"], dp) + " "+last_weeks_value[2]+".";
+			var desc = "The water level is currently " + todays_value + details[k]["units"] + ".  This is " + compared_level + " the usual range" + thelevelis[1][compared_level] + "; the level " + raised(details[k]["daily values"]["yesterday average"], todays_value, details[k]["units"], dp) + " "+details[k]["daily values"]["yesterday ago"]+" and " + raised(details[k]["daily values"]["last week average"], todays_value, details[k]["units"], dp) + " "+details[k]["daily values"]["last week ago"]+".";
 			// if this data is more than a day old
 			if ( parseInt(moment().unix())-parseInt(details[k]["latest date"]) > 86400 ) {
 				desc = desc.replace(/\ currently /g," ").replace(/\ is\ /g," was ").replace(/\ has\ /g," had ").replace(/\ yesterday\ /g," the previous day ");
 			}
 			$("#level-description").html(desc).show();
 	} catch (e) { $("#para1").hide(); }
-
+	console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// do the what is the usual depth panel
 	$("#day-average-date").html(current.format("Do MMMM"));
-	if (day_value_range["max"] !== null && day_value_range["min"] !== null) {
-		try { $("#day-average").html(mean(day_value).toFixed(dp) + details[k]["units"] + " ± " + standardDeviation(day_value).toFixed(dp) + details[k]["units"]).show(); }
+	if (details[k]["max on this day year"] !== null && details[k]["max on this day year"] !== null) {
+		try { $("#day-average").html(mean(details[k]["daily values"]["all readings"]).toFixed(dp) + details[k]["units"] + " ± " + standardDeviation(details[k]["daily values"]["all readings"]).toFixed(dp) + details[k]["units"]).show(); }
 		catch (e) { $("#day-average-no-data").closest("tr").hide(); };
-		$("#day-average-high").html(day_value_range["max"] + details[k]["units"] + " in " + moment.unix(day_value_range["max_date"]).format("YYYY"));
-		$("#day-average-low").html(day_value_range["min"] + details[k]["units"] + " in " + moment.unix(day_value_range["min_date"]).format("YYYY"));
+		$("#day-average-high").html(details[k]["max on this day"] + details[k]["units"] + " in " + details[k]["max on this day year"]);
+		$("#day-average-low").html(details[k]["min on this day"] + details[k]["units"] + " in " + details[k]["min on this day year"]);
 		$("#day-average-no-data").hide();
 		$(".average-hide").show();
 	} else {
 		$("#day-average-no-data").show();
 		$(".average-hide").hide();
 	}
-
+	console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// do the records panel
 	$("#highest-ever").html(details[k]["maximum"] + details[k]["units"]);
-	if (group_max_dates.length > 1) {
-		$("#highest-ever-date").html(group_max_dates.slice(0, group_max_dates.length - 1).join(', ') + " and " + group_max_dates.slice(-1));
-	} else {
-		$("#highest-ever-date").html(group_max_dates);
-	}
+	$("#highest-ever-date").html(commaAnd(group_max_dates));
 	$("#lowest-ever").html(details[k]["minimum"] + details[k]["units"]);
-	if (group_min_dates.length > 1) {
-		$("#lowest-ever-date").html(group_min_dates.slice(0, group_min_dates.length - 1).join(', ') + " and " + group_min_dates.slice(-1));
-	} else {
-		$("#lowest-ever-date").html(group_min_dates);
-	}
-	
+	$("#lowest-ever-date").html(commaAnd(group_min_dates));
+	console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 	// qualify our data if necessary
 	var message = "Note: we only began recording <span id=\"start-date\">recently</span>, different depths may have been recorded before then.";
-	if ( countProperties(qualify) > 0 ) { message += "  The Environment Agency records " };
-	if (qualify.hasOwnProperty("minimum")) { message += qualify["minimum"]; };
-	if (qualify.hasOwnProperty("minimum") && qualify.hasOwnProperty("maximum")) { message += " and " };
-	if (qualify.hasOwnProperty("maximum")) { message += qualify["maximum"]; };
-	if (qualify.hasOwnProperty("minimum") || qualify.hasOwnProperty("maximum")) { message += " for "+k + details[k]["type"]+"." };
 	$("#environment-agency-message").html("<span class=\"text-muted\">"+message+"</span>");
 	try { $("#start-date").html("on "+first_recording_date); }
 	catch (e) { }; // do nothing
+	console.log(k+" final: "+(new Date() - tt )); timecounter++; tt=new Date();
 }
 
 // function to return an array with no duplicates
@@ -417,105 +409,27 @@ function deduplicate( arr ) {
 	return uniques;
 }
 
-// used by highcharts to fetch the data
-function get_graph_data(arr_name) {
-	var g = [];
-	for (var key in details[arr_name]["pairs"]) {
-		if (details[arr_name]["pairs"].hasOwnProperty(key)) {
-			g.push([
-				new Date(key * 1000.0).getTime(),
-				parseFloat(details[arr_name]["pairs"][key])
-			]);
-		}
-	};
-	return g;
-}
-
-// check the value is an integer
-function isInt(n) {
-	return Number(n) === n && n % 1 === 0;
+// function to find a days worth of data from the array
+function findData( d, start, end, arr ) {
+	var data = [];
+	while ( data.length == 0 ) {
+		d++;
+		data = arr.slice( (parseInt(start)-parseInt(96*d)), (parseInt(end)-parseInt(96*(d-1))) );
+		// remove non-numerics from the array
+		data = data.filter(function(el) { return !isNaN(parseFloat(el)) && isFinite(el); });
 	}
-
-// check the value is a float
-function isFloat(n) {
-	return Number(n) === n && n % 1 !== 0;
-}
-
-// return an array of dates in the format Do MMMM YYYY
-function languageDates(arr) {
-	var lang_arr = [];
-	for (i = 0; i < arr.length; i++) {
-		lang_arr.push( moment.unix(arr[i]).format("Do MMMM YYYY") );
-	}
-	return lang_arr;
-}
+	return [ d, deduplicate(data) ];
+};
 
 // returns the mean of the values
 function mean(data) {
+	data = data.filter(function(el) { return !isNaN(parseFloat(el)) && isFinite(el); });
 	var sum = data.reduce(function(sum, value) {
-		return sum + value;
+		return sum + parseFloat(value);
 	}, 0);
-
 	var avg = sum / data.length;
 	return avg;
 }
-
-// returns the mode of the values
-// ie the most common reading
-function mode(ary) {
-	var counter = {};
-	var mode = [];
-	var max = 0;
-	for (var i in ary) {
-		if (!(ary[i] in counter))
-			counter[ary[i]] = 0;
-		counter[ary[i]] ++;
-
-		if (counter[ary[i]] == max)
-			mode.push(ary[i]);
-		else if (counter[ary[i]] > max) {
-			max = counter[ary[i]];
-			mode = [ary[i]];
-		}
-	}
-	return mode;
-}
-
-// find the nearest number in the object
-function nearest( noofdays, obj, dp ) {
-	var found = 0,
-			previous = 0,
-			diff = 86400*parseInt(noofdays);
-	for (var i in obj["pairs"]) {
-		found = i;
-		if ( ( parseInt(i) + diff ) >= obj["latest date"] ) { found = previous; break }
-		previous = found;
-	}
-	previous = Math.round(parseInt(moment.unix(obj["latest date"]).startOf("day")-moment.unix(found).startOf("day"))/86400000);
-	if ( previous == 1 ) { previous = "yesterday" }
-	else if ( previous > 1 && previous < 7 ) { previous = "last "+moment().startOf("day").subtract(previous,"days").format("dddd"); }
-	else if ( previous == 7 ) { previous = "a week ago" } 
-	else { previous = previous.toFixed(0)+" days ago" };
-	return [ mean(obj["daily values"][moment.unix(found).startOf('day').unix()]), found, previous ];
-}
-
-// Returns the value at a given percentile in a sorted numeric array.
-// "Linear interpolation between closest ranks" method
-// https://gist.github.com/IceCreamYou/6ffa1b18c4c8f6aeaad2
-function percentile(arr, p) {
-		if (arr.length === 0) return 0;
-		if (typeof p !== 'number') throw new TypeError('p must be a number');
-		if (p <= 0) return arr[0];
-		if (p >= 1) return arr[arr.length - 1];
-
-		var index = arr.length * p,
-			lower = Math.floor(index),
-			upper = lower + 1,
-			weight = index % 1;
-
-		if (upper >= arr.length) return arr[lower];
-		return arr[lower] * (1 - weight) + arr[upper] * weight;
-	}
 
 // Returns the percentile of the given value in a sorted numeric array.
 // https://gist.github.com/IceCreamYou/6ffa1b18c4c8f6aeaad2
@@ -532,6 +446,24 @@ function percentRank(arr, v) {
 		}
 	}
 	return 1;
+}
+
+// Returns the value at a given percentile in a sorted numeric array.
+// "Linear interpolation between closest ranks" method
+// https://gist.github.com/IceCreamYou/6ffa1b18c4c8f6aeaad2
+function percentile(arr, p) {
+	if (arr.length === 0) return 0;
+	if (typeof p !== 'number') throw new TypeError('p must be a number');
+	if (p <= 0) return arr[0];
+	if (p >= 1) return arr[arr.length - 1];
+
+	var index = arr.length * p,
+		lower = Math.floor(index),
+		upper = lower + 1,
+		weight = index % 1;
+
+	if (upper >= arr.length) return arr[lower];
+	return arr[lower] * (1 - weight) + arr[upper] * weight;
 }
 
 // function that processes the flood warnings and prints them to screen
@@ -581,76 +513,146 @@ function processFloodData(k, data) {
 // use easier
 function processRiverData(k, data) {
 	try {
+		var tt = new Date(),timecounter=1;
+		console.log(k+" started process: "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
 		// set the multiplier, precision and split the data by new lines
-		var multiplier = 1,
+		var multiplier = 0.001,
 				dp = 3,
 				first_line = null,
-				lines = data.split("|");
-
+				lines = [];
 		// correct the multiplier and precision
 		if (details[k]["units"] == "cm") {
-			multiplier = 100;
+			multiplier = 0.1;
 			dp = 1;
 		};
-		// loop through all the lines
-		for (var l = 0; l < lines.length; l++) {
-			// split the lines by comma as they are csv
-			var this_line = lines[l].split(",");
-			// make the the first value is a integer and the second a float
-			if ( first_line === null ) { 
-				this_line[0] = parseInt(100*parseFloat(this_line[0]));
-				first_line = parseFloat(this_line[0]/100); 
-			} else {
-				this_line[0] = parseInt(100*parseFloat(parseFloat(this_line[0])+parseFloat(first_line)));
-			}
-			this_line[1] = parseFloat(multiplier * this_line[1] / 1000);
-			
-			// check the types
-			if (isInt(this_line[0]) && (isFloat(this_line[1]) || isInt(this_line[1]))) {
-				// check the earliest and latest dates
-				if (details[k]["earliest date"] == null || this_line[0] < details[k]["earliest date"]) {
-					details[k]["earliest date"] = this_line[0]
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		// get the data in the correct format
+		var dataparts = data.trim().split(",").map(function(n) { if ( isNaN(n) ) { return n } else { return parseFloat(parseInt(n)*multiplier).toFixed(dp) }; }),
+				datapartslength = dataparts.length;
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		// set details
+		details[k]["earliest date"] = parseInt(dataparts[0]/multiplier);
+		details[k]["latest date"] = parseInt(details[k]["earliest date"]+(900*(datapartslength-2)));
+		// get the maximum and minimum values
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		var range = arrayMax(dataparts.slice(1,datapartslength),details[k]["earliest date"]);
+		details[k]["maximum"] = parseFloat(range[0]);
+		details[k]["maximum dates"] = range[1];
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		var range = arrayMin(dataparts.slice(1,datapartslength),details[k]["earliest date"]);
+		details[k]["minimum"] = parseFloat(range[0]);
+		details[k]["minimum dates"] = range[1];
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		// the data should have 96 (4*15minutes) data points per day but
+		// the data does not always start at 00:00.  find out how many
+		// data points are missing
+		var number_of_missing_points_at_the_start = parseInt((moment.unix(details[k]["earliest date"],"s")-moment.unix(details[k]["earliest date"],"s").startOf("day"))/900000);
+		// determine how many days worth of data we have (the data for the
+		// last day may not end at 00:00)
+		var number_of_days_worth_of_data = parseInt(datapartslength+number_of_missing_points_at_the_start)/96;
+		// get the position in the array where the last days worth of
+		// data starts
+		var start_of_last_day_position = (parseInt( number_of_days_worth_of_data )*96)-number_of_missing_points_at_the_start+1;
+		// try to find the day where we last had data
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		var data_found = findData(-1,start_of_last_day_position,datapartslength,dataparts);
+		details[k]["daily values"]["this day"] = parseFloat(data_found[1][data_found[1].length-1]).toFixed(dp);
+		details[k]["daily values"]["this day date"] = moment.utc( parseInt( 900*(start_of_last_day_position-1) ) + details[k]["earliest date"], "s" ).unix();
+		
+		// now try to get the previous day with data
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		data_found = findData(data_found[0],start_of_last_day_position, parseInt(datapartslength-details[k]["daily values"]["this day"].length),dataparts);
+		details[k]["daily values"]["yesterday average"] = mean(data_found[1]).toFixed(dp);
+		details[k]["daily values"]["yesterday ago"] = ago(data_found[0]);
+		
+		// now try to get the previous data from at least a week ago
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		data_found = findData(data_found[0]+5,start_of_last_day_position, parseInt(datapartslength-details[k]["daily values"]["this day"].length),dataparts);
+		details[k]["daily values"]["last week average"] = mean(data_found[1]).toFixed(dp);
+		details[k]["daily values"]["last week ago"] = ago(data_found[0]); //moment.utc(details[k]["daily values"]["this day date"],"s").subtract(data_found[0],"days");
+		
+		// now try to find all the data on a given date
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		var start_year = moment.unix(details[k]["earliest date"],"s").year(),
+				end_year = moment.utc(details[k]["daily values"]["this day date"],"s").year();
+		var yearly = [];
+		details[k]["max on this day"] = -Infinity;
+		details[k]["max on this day year"] = [];
+		details[k]["min on this day"] = Infinity;
+		details[k]["min on this day year"] = [];
+		details[k]["daily values"]["all readings"] = [];
+		for ( y=start_year;y<end_year;y++ ) {
+			var which_date = moment.utc(y+" "+moment.utc().format("MM DD"),"YYYY MM DD").startOf("day").unix();
+			var pos = 1 + ( parseInt(which_date) - details[k]["earliest date"] )/900;
+			// check we have data in that range
+			if ( pos < 0 || pos > dataparts.length ) { continue };
+			yearly = dataparts.slice(Math.max(pos,1),pos+96);
+			for ( var z=0;z<yearly.length;z++ ) {
+				if ( parseFloat(yearly[z]) == details[k]["max on this day"] ) {
+					details[k]["max on this day year"].push(y);
+				}
+				else if ( parseFloat(yearly[z]) > details[k]["max on this day"] ) {
+					details[k]["max on this day year"] = [];
+					details[k]["max on this day year"].push(y);
+					details[k]["max on this day"] = parseFloat(yearly[z]);
 				};
-				if (details[k]["latest date"] == null || this_line[0] > details[k]["latest date"]) {
-					details[k]["latest date"] = this_line[0]
+				if ( parseFloat(yearly[z]) == details[k]["min on this day"] ) {
+					details[k]["min on this day year"].push(y);
+				}
+				else if ( parseFloat(yearly[z]) < details[k]["min on this day"] ) {
+					details[k]["min on this day year"] = [];
+					details[k]["min on this day year"].push(y);
+					details[k]["min on this day"] = parseFloat(yearly[z]);
 				};
-				// compile the "pairs" dictionary
-				details[k]["pairs"][this_line[0]] = this_line[1].toFixed(dp);
-				// add the value to the readings array
-				details[k]["readings"].push(this_line[1]);
-				// make the daily array
-				var daily_time = moment.unix(this_line[0]).startOf("day").unix();
-				if (typeof details[k]["daily values"][daily_time] == "undefined") {
-					details[k]["daily values"][daily_time] = []
-				};
-				details[k]["daily values"][daily_time].push(this_line[1]);
-
-				// check for max and min
-				if (details[k]["maximum"] == null) {
-					details[k]["maximum"] = this_line[1]
-				};
-				if (this_line[1] > details[k]["maximum"]) {
-					details[k]["maximum"] = this_line[1];
-					details[k]["maximum dates"] = [];
-					details[k]["maximum dates"].push(moment.unix(this_line[0]).startOf("day").unix());
-				} else if (this_line[1] == details[k]["maximum"]) {
-					details[k]["maximum dates"].push(moment.unix(this_line[0]).startOf("day").unix());
-				};
-				if (details[k]["minimum"] == null) {
-					details[k]["minimum"] = this_line[1]
-				};
-				if (this_line[1] < details[k]["minimum"]) {
-					details[k]["minimum"] = this_line[1];
-					details[k]["minimum dates"] = [];
-					details[k]["minimum dates"].push(moment.unix(this_line[0]).startOf("day").unix());
-				} else if (this_line[1] == details[k]["minimum"]) {
-					details[k]["minimum dates"].push(moment.unix(this_line[0]).startOf("day").unix());
-				};
+				// compile all the daily values
+				details[k]["daily values"]["all readings"].push( yearly[z] );
 			};
-		}
-		// make sure we only have different dates in the arrays
-		details[k]["maximum dates"] = deduplicate(details[k]["maximum dates"]);
-		details[k]["minimum dates"] = deduplicate(details[k]["minimum dates"]);
+		};
+		//console.log(k+" "+timecounter+": "+(new Date() - tt )); timecounter++; tt=new Date();
+		details[k]["max on this day"] = parseFloat(details[k]["max on this day"]).toFixed(dp);
+		details[k]["max on this day year"] = commaAnd(deduplicate(details[k]["max on this day year"]));
+		details[k]["min on this day"] = parseFloat(details[k]["min on this day"]).toFixed(dp);
+		details[k]["min on this day year"] = commaAnd(deduplicate(details[k]["min on this day year"]));
+
+		// assign all the readings
+		details[k]["readings"] = dataparts.slice(1,datapartslength);
+
+		// now compile the stats
+		// see: http://codereview.stackexchange.com/a/68431
+		function mode(arr) {
+			var count = null;
+			return arr.reduce(function(current, item) {
+				if ( count == null ) { 
+					count = parseInt(item/multiplier)-900;
+					return current;
+				}
+				else {
+					count += 900;
+					if ( ! isNaN(item) ) {
+						current.graphone.push( [ new Date( count * 1000.0).getTime(), parseFloat(item) ] );
+						var val = current.numMapping[parseFloat(item).toFixed(1)] = (current.numMapping[parseFloat(item).toFixed(1)] || 0) + 1;
+						if (val > current.greatestFreq) {
+							current.greatestFreq = val;
+							current.mode = item;
+						}
+						return current;
+					}
+					else {
+						current.graphone.push( [ new Date( count * 1000.0).getTime(), "" ] );
+						return current;
+					};
+				};
+			}, {mode: null, greatestFreq: -Infinity, numMapping: {}, graphone: [], graphtwo: []}, arr.slice(1)); };
+		details[k]["mode" ] = mode(dataparts);
+		var o = details[k]["mode"].numMapping;
+		details[k]["mode"]["graphtwo"] = Object.keys(o).sort(function(a, b) { return a - b }).map(function(k) { return [ parseFloat(k), o[k] ] });	
+		// clone the readings array and sort numerically and remove null readings
+		dataparts = dataparts.slice(1).filter(function(el) { return !isNaN(parseFloat(el)) && isFinite(el); }).sort(function(a, b) { return a - b });
+		// determine the levels for the percentiles
+		details[k]["lower percentile" ] = parseFloat(percentile(dataparts, 0.05).toFixed(dp));
+		details[k]["higher percentile" ] = parseFloat(percentile(dataparts, 0.95).toFixed(dp));
+		details[k]["current percentile" ] = (100 * percentRank(dataparts, parseFloat(details[k]["daily values"]["this day"]))).toFixed(0);		
+		console.log(k+" final process: "+(new Date() - tt )); timecounter++; tt=new Date();
 	} catch (e) { showError() };
 }
 
@@ -676,6 +678,18 @@ function scrollToTop() {
 	$('html, body').animate({
 		scrollTop: offsetTop
 	}, 500, 'linear');
+}
+
+// show an error message
+function showError() {
+	$("#error-title").html("Error").show();
+	$("#error-text").html("<p>Well, that wasn't supposed to happen!</p><p>There has been an error collecting the data for the stations.  Please try again or later if you keep getting this message.</p>").show();
+	$("#error-messages").show();
+	$(".nav").hide();
+	$("#river-data").hide();
+	// stop the timers
+	clearTimeout(apology);
+	clearTimeout(dots);
 }
 
 // display the flood warnings
@@ -722,32 +736,18 @@ function showFloodWarnings(k) {
 		$("#alert-box-message-text").append("Nothing to see here, move along.");
 		$("#alert-box-message").removeClass("panel-warning-bold panel-danger-bold panel-info").addClass("panel-default").hide();
 	}
-};
-
-// show an error message
-function showError() {
-	$("#error-title").html("Error").show();
-	$("#error-text").html("<p>Well, that wasn't supposed to happen!</p><p>There has been an error collecting the data for the stations.  Please try again or later if you keep getting this message.</p>").show();
-	$("#error-messages").show();
-	$(".nav").hide();
-	$("#river-data").hide();
-	// stop the timers
-	clearTimeout(apology);
-	clearTimeout(dots);
 }
 
 // function to calculate the standard deviation of an array of numbers
 function standardDeviation(values) {
+	values = values.filter(function(el) { return !isNaN(parseFloat(el)) && isFinite(el); });
 	var avg = mean(values);
-
 	var squareDiffs = values.map(function(value) {
-		var diff = value - avg;
+		var diff = parseFloat(value) - avg;
 		var sqrDiff = diff * diff;
 		return sqrDiff;
 	});
-
 	var avgSquareDiff = mean(squareDiffs);
-
 	var stdDev = Math.sqrt(avgSquareDiff);
 	return stdDev;
 }
@@ -815,7 +815,6 @@ var details = {
 		"type": " (The Cut)",
 		"units": "cm",
 		"readings": [],
-		"pairs": {},
 		"daily values": {},
 		"maximum": null,
 		"maximum dates": [],
@@ -823,10 +822,14 @@ var details = {
 		"minimum dates": [],
 		"longitude": -2.043272,
 		"latitude": 51.160588,
-		"ea maximum": 134.6,
-		"ea max dates": [1389235500],
-		"ea minimum": 0,
-		"ea min dates": [782703000],
+		"max on this day": -Infinity,
+		"max on this day year": null,
+		"min on this day": Infinity,
+		"min on this day year": null,
+		"lower percentile": null,
+		"higher percentile": null,
+		"current percentile": null,
+		"mode": {},
 		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
@@ -837,7 +840,6 @@ var details = {
 		"type": " (Groundwater)",
 		"units": "m",
 		"readings": [],
-		"pairs": {},
 		"daily values": {},
 		"maximum": null,
 		"maximum dates": [],
@@ -845,10 +847,14 @@ var details = {
 		"minimum dates": [],
 		"longitude": -1.9727647,
 		"latitude": 51.186216,
-		"ea maximum": null,
-		"ea max dates": [],
-		"ea minimum": null,
-		"ea min dates": [],
+		"max on this day": -Infinity,
+		"max on this day year": null,
+		"min on this day": Infinity,
+		"min on this day year": null,
+		"lower percentile": null,
+		"higher percentile": null,
+		"current percentile": null,
+		"mode": {},
 		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
@@ -859,7 +865,6 @@ var details = {
 		"type": "",
 		"units": "cm",
 		"readings": [],
-		"pairs": {},
 		"daily values": {},
 		"maximum": null,
 		"maximum dates": [],
@@ -867,10 +872,14 @@ var details = {
 		"minimum dates": [],
 		"longitude": -2.132143,
 		"latitude": 51.1839,
-		"ea maximum": 72.3,
-		"ea max dates": [1388885400],
-		"ea minimum": 4.9,
-		"ea min dates": [904590900],
+		"max on this day": -Infinity,
+		"max on this day year": null,
+		"min on this day": Infinity,
+		"min on this day year": null,
+		"lower percentile": null,
+		"higher percentile": null,
+		"current percentile": null,
+		"mode": {},
 		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
@@ -881,7 +890,6 @@ var details = {
 		"type": " (Groundwater)",
 		"units": "m",
 		"readings": [],
-		"pairs": {},
 		"daily values": {},
 		"maximum": null,
 		"maximum dates": [],
@@ -889,10 +897,14 @@ var details = {
 		"minimum dates": [],
 		"longitude": -1.958392,
 		"latitude": 51.202428,
-		"ea maximum": null,
-		"ea max dates": [],
-		"ea minimum": null,
-		"ea min dates": [],
+		"max on this day": -Infinity,
+		"max on this day year": null,
+		"min on this day": Infinity,
+		"min on this day year": null,
+		"lower percentile": null,
+		"higher percentile": null,
+		"current percentile": null,
+		"mode": {},
 		"warning": 99,
 		"warning messages": [],
 		"earliest date": null,
@@ -917,9 +929,9 @@ var dots = window.setInterval( function() { $( "#error-title, #error-text span:l
 			$( "#error-text" ).append( "<br><span>This is taking longer than expected, please hold or try again later.  We are still working on getting the data for you.</span>" ); 
 		}, 10000);
 
-
 // -------- WHERE THE FUN BEGINS -------------------------------------//
 $(document).ready(function() {
+	console.log("Start: "+new Date());
 	// add all the tooltips
 	$('[data-toggle="tooltip"]').tooltip();
 	// what to do when a tab is clicked
@@ -945,6 +957,7 @@ $(document).ready(function() {
 
 	// loop through all the items in the object and get the flood warnings
 	// these are on google to avoid CORS
+	
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
 			// define the url
@@ -995,92 +1008,83 @@ $(document).ready(function() {
 		var this_location = $(".nav-tabs a:first").text();
 		if (! details.hasOwnProperty(this_location)) {
 			showError();
-		} else {
-			// get this information in the background
-			$.ajax({ 
-					url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec",
-					type: "POST",
-					dataType: "json",
-					location: this_location,
-					data: { 
-						place: encodeURIComponent(this_location)
-					},
-					message: "<br>Fetching the water level data for "+this_location+"."
-			})
-			// show an error message if we haven't got this data
-			.fail( function() {
-				showError();
-			})
-			// otherwise always do this
-			.always(function(a, success) {
-				try {
-					// show a progress message and process the data
-					$( "#error-text span:last" ).append( "<br>Processing the data for "+this.location );
-					processRiverData(this.location, a[this.location]);
-					// add a marker to the map
-					marker[this.location] = L.marker([details[this.location]['latitude'], details[this.location]['longitude']]).addTo(mymap).bindPopup("<b>"+this.location + details[this.location]["type"]+"</b><br>Current depth: "+details[this.location]["pairs"][details[this.location]["latest date"]]+details[this.location]["units"]);
-					// show the first tab
-					create_page(this.location);
-					// set a timer to update the last updated time
-					var last_updated_time = window.setInterval( function() { 
-						try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"])) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
-						catch (e) { $("#last-updated").hide(); }
-					}, 60000);
-					// make everything visible
-					$("#error-messages").hide();
-					$(".nav-tabs li:first").show();
-					$(".nav").show();
-					$("#river-data").show();
-					// re-size the map
-					mymap.invalidateSize();
-					
-					// now let's get the data for the other locations/tabs
-					var tab_data_counter = 1;
-					$(".nav-tabs a").each( function(n) {
-						// skip the first one as we've already done it
-						if (n > 0) {
-							// what is the place name on this tab
-							this_location = $(this).text();
-							// if we have details about it download the data in the
-							// background
-							if (details.hasOwnProperty(this_location)) {
-								$.ajax( { 
-										url: "https://script.google.com/macros/s/AKfycbzlhe1LMeAOCyNbl7Pn_EFg7y3W-5lZJFZT53M8nvjuw7HERcy5/exec",
-										type: "POST",
-										dataType: "json",
-										location: this_location,
-										tab_num: n,
-										data: { 
-											place: encodeURIComponent(this_location)
-										},
-										message: "<br>Fetching the water level data for "+this_location+"."
-								})
-								// don't worry too much if we don't get this information
-								// just do the minimum
-								.fail( function() {
-									// increment the tab_data_counter and if this is 
-									// the same as the number of tabs then stop the timers
-									tab_data_counter++;
-									if ( tab_data_counter == $(".nav-tabs a").length ) {
-										// stop the timers
-										clearTimeout(apology);
-										clearTimeout(dots);
-										// open the pop-up on the map
-										marker[$("ul.nav-tabs li.active").text()].openPopup();
-									};
-								})
-								// when we have data always do this
-								.always(function(a, success) {
-									try {
-										if ( typeof a !== "undefined" ) { 
-											// show a progress message
-											$( "#error-text span:last" ).append( "<br>Processing the data for "+this.location );
-											processRiverData(this.location, a[this.location]);
-											// add a marker to the map
-											marker[this.location] = L.marker([details[this.location]['latitude'], details[this.location]['longitude']]).addTo(mymap).bindPopup("<b>"+this.location + details[this.location]["type"]+"</b><br>Current depth: "+details[this.location]["pairs"][details[this.location]["latest date"]]+details[this.location]["units"]);
-										};
+		} 
+		else {
+			$( "#error-text" ).append( "<span><br>Fetching the water level data for "+this_location+".</span>" );
+			// dummy function to fetch this data
+			(function (this_location) {
+				// download and unzip the data
+				//JSZipUtils.getBinaryContent('all_readings.zip', function(err, zipdata) {
+				JSZipUtils.getBinaryContent('http://rcors.boff.in/'+this_location, function(err, zipdata) {
+					if (err) { showError(); }
+					var zip = new JSZip();
+					try {
+						zip.loadAsync(zipdata)
+						.then(function(zip) {
+							$( "#error-text" ).append( "<span><br>Processing the water level data for "+this_location+".</span>" );
+							return zip.file("all.readings").async("string");
+						})
+						.then(function success(text) {
+							//console.log("End "+this_location+" fetch: "+new Date());
+							// process the information downloaded
+							processRiverData(this_location, text);
+							//console.log("End "+this_location+" processed: "+new Date());
+							// add a marker to the map
+							marker[this_location] = L.marker([details[this_location]['latitude'], details[this_location]['longitude']]).addTo(mymap).bindPopup("<b>"+this_location + details[this_location]["type"]+"</b><br>Current depth: "+details[this_location]["daily values"]["this day"]+details[this_location]["units"]);
+							// show the first tab
+							create_page(this_location);
+							//console.log("End "+this_location+" created: "+new Date());
+							// set a timer to update the last updated time
+							var last_updated_time = window.setInterval( function() { 
+								try { $("#last-updated").html("Last updated: about " + moment().to(moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"])) + " ("+moment.unix(details[$("ul.nav-tabs li.active").text()]["latest date"]).calendar(moment(), { sameElse: 'Do MMMM YYYY [at] HH:mm' })+")").show(); }
+								catch (e) { $("#last-updated").hide(); }
+							}, 60000);
+							// make everything visible
+							$("#error-messages").hide();
+							$(".nav-tabs li:first").show();
+							$(".nav").show();
+							$("#river-data").show();
+							// re-size the map
+							mymap.invalidateSize();
+							//console.log("End "+this_location+" fetch: "+new Date());
+						}, function error(e) {
+							showError();
+						});
+					} catch(e) {
+						showError();
+					}
+				});
+			}(this_location)); // closure for the dummy function
+			
+			// now let's get the data for the other locations/tabs
+			var tab_data_counter = 1;
+			
+			$(".nav-tabs a").each( function(tabnumber) {
+				// skip the first one as we've already done it
+				if (tabnumber > 0) {
+					// what is the place name on this tab
+					this_location = $(this).text();
+					// dummy function to fetch this data
+					(function (this_location) {
+						// if we have details about it download the data in the
+						// background
+						if (details.hasOwnProperty(this_location)) {
+							JSZipUtils.getBinaryContent('http://rcors.boff.in/'+this_location, function(err, zipdata) {
+								if (err) { showError(); }
+								var zip = new JSZip();
+								try {
+									zip.loadAsync(zipdata)
+									.then(function(zip) {
+										$( "#error-text" ).append( "<span><br>Processing the water level data for "+this_location+".</span>" );
+										return zip.file("all.readings").async("string");
+									})
+									.then(function success(text) {
+										// process the information downloaded
+										processRiverData(this_location, text);
+										// add a marker to the map
+										marker[this_location] = L.marker([details[this_location]['latitude'], details[this_location]['longitude']]).addTo(mymap).bindPopup("<b>"+this_location + details[this_location]["type"]+"</b><br>Current depth: "+details[this_location]["daily values"]["this day"]+details[this_location]["units"]);
 										// show the tab
-										$(".nav-tabs li").eq(this.tab_num).show();
+										$(".nav-tabs li").eq(tabnumber).show();
 										// increment the tab_data_counter and if this is 
 										// the same as the total number of tabs then stop 
 										// the timers as we have processed all the tabs
@@ -1092,13 +1096,37 @@ $(document).ready(function() {
 											// open the pop-up on the map
 											marker[$("ul.nav-tabs li.active").text()].openPopup();
 										};
-									} catch (e) { showError() };
-								});
-							}
+										//console.log("End "+this_location+" fetch: "+new Date());
+									}, function error(e) {
+										// increment the tab_data_counter and if this is 
+										// the same as the number of tabs then stop the timers
+										tab_data_counter++;
+										if ( tab_data_counter == $(".nav-tabs a").length ) {
+											// stop the timers
+											clearTimeout(apology);
+											clearTimeout(dots);
+											// open the pop-up on the map
+											marker[$("ul.nav-tabs li.active").text()].openPopup();
+										};
+									});
+								} catch(e) {
+									// increment the tab_data_counter and if this is 
+									// the same as the number of tabs then stop the timers
+									tab_data_counter++;
+									if ( tab_data_counter == $(".nav-tabs a").length ) {
+										// stop the timers
+										clearTimeout(apology);
+										clearTimeout(dots);
+										// open the pop-up on the map
+										marker[$("ul.nav-tabs li.active").text()].openPopup();
+									};
+								}
+							});
 						}
-					});
-				} catch (e) { showError() };
+					}(this_location)); // closure of the dummy function
+				}
 			});
+			
 		};
 	}
 	

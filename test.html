@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<script>
-			 var startTime = (new Date()).getTime();
-		</script>
 		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 		<title>River Boffin - Water Levels</title>
 		<!-- favicon stuff -->
@@ -26,7 +23,6 @@
 		<meta name="theme-color" content="#ffffff">
 		<link rel="shortcut icon" href="images/favico/favicon.ico" type="image/x-icon">
 		<link rel="icon" href="images/favico/favicon.ico" type="image/x-icon">
-		<!-- get the javascript unzipper -->
 		<script type="text/javascript" src="js/jszip-utils.min.js"></script>
 		<!--
     Mandatory in IE 6, 7, 8 and 9.
@@ -168,12 +164,12 @@
 							<table class="table table-condensed table-bordered">
 								<tbody>
 									<tr>
-										<td width="125px">Highest ever level</td>
+										<td>Highest ever level</td>
 										<td><span id="highest-ever"></span></td>
 										<td>Recorded on <span id="highest-ever-date"></span>.</td>
 									</tr>
 									<tr>
-										<td width="125px">Lowest ever level</td>
+										<td>Lowest ever level</td>
 										<td><span id="lowest-ever"></span></td>
 										<td>Recorded on <span id="lowest-ever-date"></span>.</td>
 									</tr>
@@ -204,7 +200,7 @@
 							</div>
 							<div class="panel-body">
 								<div id="graph-distribution"></div>
-								<p>We have recorded <span class="number-of-recordings"></span> measurements of <span class="river-location"></span> since <span class="first-recording-date"></span> and have used them to compile the chart above.  The tallest peak indicates the most common depth of <span class="river-location"></span> and smaller peaks indicate other regular depths during periods of heavy rainfall or flooding (particularly when the corresponding depth differs greatly from the most common depth).  The most common depth is <span id="current-depth-most-common-recording"></span> and has been recorded <span id="current-depth-most-common-occurrance"></span> times.</p>
+								<p>We have recorded <span class="number-of-recordings"></span> measurements of <span class="river-location"></span> since <span class="first-recording-date"></span> and have used them to compile the chart above.  The tallest peak indicates the most common depth of <span class="river-location"></span> and smaller peaks indicate other regular depths during periods of heavy rainfall or flooding (particularly when the corresponding depth differs greatly from the most common depth).</p>
 							</div>
 						</div>
 					</div>
@@ -233,14 +229,5 @@
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
 		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.0.0/jszip.min.js"></script>
 		<script type="text/javascript" src="js/flood.js"></script>
-		<script>
-			 $(window).load(function () {
-					 var endTime = (new Date()).getTime();
-					 var millisecondsLoading = endTime - startTime;
-					 // Put millisecondsLoading in a hidden form field
-					 // or Ajax it back to the server or whatever.
-					 console.log(millisecondsLoading);
-			 });
-		</script>
   </body>
 </html>
