@@ -970,6 +970,7 @@ $(document).ready(function() {
 					message: "<br>Fetching flood warnings for " + k +"."
 			})
 			.fail(function() {
+				console.log("failed to get flood warning for"+k);
 				// show the error message
 				details[this.location]["warning"] = 100;
 				if ( this.location == $("ul.nav-tabs li.active").text() ) {
@@ -977,7 +978,7 @@ $(document).ready(function() {
 				};
 			})
 			// always do this when we have downloaded the data
-			.done(function(a, success) {
+			.always(function(a, success) {
 				console.log(JSON.stringify(a));
 				// don't fail on error just show the user a warning
 				if (success == "error") {
