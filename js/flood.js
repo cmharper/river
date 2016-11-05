@@ -32,12 +32,6 @@ function getDatesInSortedOrder(dates){
 	return grouped_dates ;
 }
 
-
-
-
-
-
-
 // attach the back to top button to the scrolling of the window
 $(function() {
 	$(document).on('scroll', function() {
@@ -957,7 +951,6 @@ $(document).ready(function() {
 
 	// loop through all the items in the object and get the flood warnings
 	// these are on google to avoid CORS
-	
 	for (var k in details) {
 		if (details.hasOwnProperty(k)) {
 			// define the url
@@ -985,6 +978,7 @@ $(document).ready(function() {
 			})
 			// always do this when we have downloaded the data
 			.always(function(a, success) {
+				alert(JSON.stringify(a));
 				// don't fail on error just show the user a warning
 				if (success == "error") {
 					details[this.location]["warning"] = 100;
