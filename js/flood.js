@@ -977,7 +977,7 @@ $(document).ready(function() {
 				};
 			})
 			// always do this when we have downloaded the data
-			.always(function(a, success) {
+			.done(function(a, success) {
 				console.log(JSON.stringify(a));
 				// don't fail on error just show the user a warning
 				if (success == "error") {
